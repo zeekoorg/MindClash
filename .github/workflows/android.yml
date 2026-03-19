@@ -1,6 +1,5 @@
 name: Manual Android Build 🚀
 
-# هذا السطر هو السحر الذي يمنع البناء التلقائي ويجعله يدوياً بضغطة زر منك
 on:
   workflow_dispatch: 
 
@@ -18,6 +17,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
+
+      - name: ⚙️ توليد ملفات الجرادل الأساسية (لأنك تعمل من الهاتف)
+        run: gradle wrapper --gradle-version 8.7
 
       - name: 🔐 إعطاء صلاحية التشغيل لمحرك الجرادل
         run: chmod +x gradlew
