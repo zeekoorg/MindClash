@@ -23,14 +23,14 @@
     <string name="privacy_policy">Privacy Policy</string>
     <string name="easy">Easy</string>
     <string name="medium">Medium</string>
-    <string name="hard">Hard</string>
     <string name="expert">Expert</string>
     <string name="legendary">Legendary</string>
     <string name="epic">Epic</string>
     <string name="mythic">Mythic</string>
     <string name="cosmic">Cosmic</string>
     <string name="infinite">Infinite</string>
-    <string name="mind_end">Mind's End</string>
+    <!-- تم تغيير الاسم من mind_end إلى mindclash_final_level مع إضافة شرطة مائلة قبل الفاصلة العليا -->
+    <string name="mindclash_final_level">Mind\'s End</string>
     <string name="question">Question</string>
     <string name="time">Time</string>
     <string name="lives">Lives</string>
