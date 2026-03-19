@@ -19,7 +19,7 @@ jobs:
           cache: gradle
 
       - name: ⚙️ توليد ملفات الجرادل الأساسية (لأنك تعمل من الهاتف)
-        run: gradle wrapper --gradle-version 8.7
+        run: gradle wrapper --gradle-version 8.9
 
       - name: 🔐 إعطاء صلاحية التشغيل لمحرك الجرادل
         run: chmod +x gradlew
