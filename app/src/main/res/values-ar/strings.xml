@@ -30,7 +30,8 @@
     <string name="mythic">خرافي</string>
     <string name="cosmic">كوني</string>
     <string name="infinite">لا نهائي</string>
-    <string name="mind_end">نهاية العقول</string>
+    <!-- تم تغيير الاسم من mind_end إلى mindclash_final_level -->
+    <string name="mindclash_final_level">نهاية العقول</string>
     <string name="question">سؤال</string>
     <string name="time">الوقت</string>
     <string name="lives">المحاولات</string>
