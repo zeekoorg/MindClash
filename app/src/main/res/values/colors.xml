@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <color name="primary">#FF6C63FF</color>
+    <color name="primary_dark">#FF5248CC</color>
+    <color name="accent">#FF03DAC6</color>
+    <color name="background">#FF121212</color>
+    <color name="surface">#FF1E1E1E</color>
+    <color name="error">#FFCF6679</color>
+    
+    <color name="neon_blue">#FF4D4DFF</color>
+    <color name="neon_pink">#FFFF1493</color>
+    <color name="neon_green">#FF39FF14</color>
+    <color name="neon_yellow">#FFFFD700</color>
+    <color name="neon_orange">#FFFFA500</color>
+    
+    <color name="gold">#FFFFD700</color>
+    <color name="gold_dark">#FFFFA500</color>
+    
+    <color name="level_easy">#FF4CAF50</color>
+    <color name="level_medium">#FFFF9800</color>
+    <color name="level_hard">#FFF44336</color>
+    <color name="level_expert">#FF9C27B0</color>
+    <color name="level_legendary">#FFFFD700</color>
+    <color name="level_epic">#FFFF1493</color>
+    <color name="level_mythic">#FF00BCD4</color>
+    <color name="level_cosmic">#FF3F51B5</color>
+    <color name="level_infinite">#FFE91E63</color>
+    <color name="level_mind_end">#FF000000</color>
+</resources>
