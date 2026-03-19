@@ -1,0 +1,32 @@
+name: Manual Android Build 🚀
+
+# هذا السطر هو السحر الذي يمنع البناء التلقائي ويجعله يدوياً بضغطة زر منك
+on:
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 جلب الأكواد من المستودع
+        uses: actions/checkout@v4
+
+      - name: ☕ تهيئة بيئة جافا (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: 🔐 إعطاء صلاحية التشغيل لمحرك الجرادل
+        run: chmod +x gradlew
+
+      - name: 🔨 بناء التطبيق (استخراج ملف APK)
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: 📤 رفع ملف الـ APK النهائي للتحميل
+        uses: actions/upload-artifact@v4
+        with:
+          name: MindClash-App-Ready
+          path: app/build/outputs/apk/debug/app-debug.apk
