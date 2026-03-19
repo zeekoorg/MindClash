@@ -4,7 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") // تفعيل إضافة كومبوز الأحدث
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
-    id("com.google.gms.google-services") // تفعيل خدمات جوجل
 }
 
 android {
@@ -96,10 +95,6 @@ dependencies {
     // 🚀 خدمات هواوي (المعرف الإعلاني)
     implementation("com.huawei.hms:ads-identifier:3.4.62.300")
     
-    // 🚀 خدمات جوجل (فايربيس للتحليلات الأساسية)
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    implementation("com.google.firebase:firebase-analytics")
-    
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     
@@ -125,3 +120,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
