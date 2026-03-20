@@ -38,7 +38,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val questionRepository: QuestionRepository,
-    private val languageManager: LanguageManager
+    private val languageManager: LanguageManager,
     private val context: Context
 ) : ViewModel() {
     
