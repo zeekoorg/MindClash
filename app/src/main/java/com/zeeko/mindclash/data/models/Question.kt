@@ -21,16 +21,16 @@ data class Question(
     val isLocked: Boolean = true,
     val orderIndex: Int
 ) {
-    // دالة مساعدة للحصول على النص حسب اللغة
-    fun getQuestion(): String = 
-        if (LanguageManager.isRTL()) questionAr else questionEn
+    // دالة مساعدة للحصول على النص حسب اللغة - تستقبل LanguageManager كمعامل
+    fun getQuestion(languageManager: LanguageManager): String = 
+        if (languageManager.isRTL()) questionAr else questionEn
     
-    fun getAnswer(): String = 
-        if (LanguageManager.isRTL()) answerAr else answerEn
+    fun getAnswer(languageManager: LanguageManager): String = 
+        if (languageManager.isRTL()) answerAr else answerEn
     
-    fun getHint(): String = 
-        if (LanguageManager.isRTL()) hintAr else hintEn
+    fun getHint(languageManager: LanguageManager): String = 
+        if (languageManager.isRTL()) hintAr else hintEn
     
-    fun getCategory(): String = 
-        if (LanguageManager.isRTL()) categoryAr else categoryEn
+    fun getCategory(languageManager: LanguageManager): String = 
+        if (languageManager.isRTL()) categoryAr else categoryEn
 }
