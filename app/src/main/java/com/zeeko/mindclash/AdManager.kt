@@ -27,7 +27,8 @@ import javax.inject.Singleton
 
 @Singleton
 class AdManager @Inject constructor(
-    private val context: Context
+    private val context: Context,
+    private val languageManager: LanguageManager
 ) {
     
     // ============================================================
@@ -206,7 +207,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (20 * density).toInt())
             }
-            text = if (LanguageManager.isRTL()) "جاري تـحـميل الإعـــلان..." else "Loading ad..."
+            text = if (languageManager.isRTL()) "جاري تـحـميل الإعـــلان..." else "Loading ad..."
             setTextColor(Color.WHITE)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -405,7 +406,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (25 * density).toInt())
             }
-            text = if (LanguageManager.isRTL()) 
+            text = if (languageManager.isRTL()) 
                 "للإستمرار يجـب علـيـك مـشـاهـدة إعــلان كـ دعـمـاً لـي لأسـتـمـر بـتقـديـم الـمـزيـد 🤍"
             else 
                 "To continue, you must watch an ad as support for me to continue providing more 🤍"
@@ -445,7 +446,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (10 * density).toInt())
             }
-            text = if (LanguageManager.isRTL()) "مـشـاهـدة" else "Watch"
+            text = if (languageManager.isRTL()) "مـشـاهـدة" else "Watch"
             setTextColor(Color.WHITE)
             textSize = 14f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -457,7 +458,7 @@ class AdManager @Inject constructor(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 (45 * density).toInt()
             )
-            text = if (LanguageManager.isRTL()) "إلـغـاء" else "Cancel"
+            text = if (languageManager.isRTL()) "إلـغـاء" else "Cancel"
             setTextColor(Color.WHITE)
             textSize = 14f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -507,7 +508,7 @@ class AdManager @Inject constructor(
             } catch (ex: Exception) {
                 android.widget.Toast.makeText(
                     activity, 
-                    if (LanguageManager.isRTL()) "خطأ في فتح رابط التحميل" else "Error opening download link", 
+                    if (languageManager.isRTL()) "خطأ في فتح رابط التحميل" else "Error opening download link", 
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
