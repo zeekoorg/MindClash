@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -24,9 +25,30 @@ class LanguageManager @Inject constructor(
         private val LANGUAGE_KEY = stringPreferencesKey("app_language")
         const val LANG_ARABIC = "ar"
         const val LANG_ENGLISH = "en"
+        
+        @Volatile
+        private var instance: LanguageManager? = null
+        
+        fun getInstance(): LanguageManager {
+            return instance ?: throw IllegalStateException("LanguageManager not initialized")
+        }
+        
+        fun setInstance(manager: LanguageManager) {
+            instance = manager
+        }
     }
     
     private var currentLanguage = LANG_ARABIC
+    
+    init {
+        // تهيئة اللغة عند إنشاء الكلاس
+        CoroutineScope(Dispatchers.IO).launch {
+            context.dataStore.data.collect { preferences ->
+                currentLanguage = preferences[LANGUAGE_KEY] ?: LANG_ARABIC
+                setLocale(context, currentLanguage)
+            }
+        }
+    }
     
     fun init(context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
