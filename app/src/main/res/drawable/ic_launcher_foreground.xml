@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- خلفية متدرجة احترافية -->
+    <path
+        android:fillColor="#FF6C63FF"
+        android:pathData="M54,0 L0,0 L0,108 L108,108 L108,0 L54,0 Z" />
+    
+    <!-- تاج ذهبي 3D -->
+    <path
+        android:fillColor="#FFFFD700"
+        android:pathData="M54,10 L44,25 L64,25 L54,10 Z" />
+    <path
+        android:fillColor="#FFDAA520"
+        android:pathData="M44,25 L36,40 L72,40 L64,25 L44,25 Z" />
+    
+    <!-- دماغ ذهبي 3D (يمثل العقل) -->
+    <path
+        android:fillColor="#FFFFD700"
+        android:pathData="M54,30 C45,30 38,37 38,46 C38,52 42,57 48,59 L48,66 C48,68 50,70 52,70 L56,70 C58,70 60,68 60,66 L60,59 C66,57 70,52 70,46 C70,37 63,30 54,30 Z" />
+    
+    <!-- عيون براقة -->
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="44"
+        android:cy="46"
+        android:r="4" />
+    <circle
+        android:fillColor="#000000"
+        android:cx="44"
+        android:cy="46"
+        android:r="2" />
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="64"
+        android:cy="46"
+        android:r="4" />
+    <circle
+        android:fillColor="#000000"
+        android:cx="64"
+        android:cy="46"
+        android:r="2" />
+    
+    <!-- نقاط ضوء في العيون -->
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="42"
+        android:cy="44"
+        android:r="1" />
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="62"
+        android:cy="44"
+        android:r="1" />
+    
+    <!-- ابتسامة واثقة -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,56 C50,60 58,60 60,56" />
+    
+    <!-- أيقونة صاعقة (قوة العقل) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,15 L87,30 L80,30 L87,45 L73,30 L80,30 L73,15 L80,15 Z" />
+    
+    <!-- دوائر زخرفية متألقة -->
+    <circle
+        android:fillColor="#33FFFFFF"
+        android:cx="20"
+        android:cy="20"
+        android:r="6" />
+    <circle
+        android:fillColor="#33FFFFFF"
+        android:cx="88"
+        android:cy="88"
+        android:r="8" />
+    <circle
+        android:fillColor="#33FFFFFF"
+        android:cx="92"
+        android:cy="15"
+        android:r="4" />
+    
+</vector>
