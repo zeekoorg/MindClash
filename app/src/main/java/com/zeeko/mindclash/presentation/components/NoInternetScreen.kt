@@ -76,7 +76,7 @@ fun NoInternetScreen(
                     tint = Color(0xFFe94560),
                     modifier = Modifier
                         .fillMaxSize()
-                        .rotate(rotation)
+                        .graphicsLayer { rotationZ = rotation }
                 )
             }
             
