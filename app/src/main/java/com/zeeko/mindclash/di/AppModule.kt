@@ -39,11 +39,14 @@ object AppModule {
         return QuestionRepository(questionDao)
     }
     
-    @Provides
-    @Singleton
-    fun provideAdManager(@ApplicationContext context: Context): AdManager {
-        return AdManager(context)
-    }
+@Provides
+@Singleton
+fun provideAdManager(
+    @ApplicationContext context: Context,
+    languageManager: LanguageManager  // أضف هذا
+): AdManager {
+    return AdManager(context, languageManager)  // وقم بتحديث هذا
+}
     
     @Provides
     @Singleton
