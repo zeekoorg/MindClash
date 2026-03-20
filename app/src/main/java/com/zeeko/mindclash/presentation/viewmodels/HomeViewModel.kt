@@ -156,9 +156,7 @@ class HomeViewModel @Inject constructor(
                 DifficultyLevel(
                     id = 10,
                     name = if (languageManager.isRTL()) 
-                        context.getString(R.string.mindclash_final_level) 
-                    else 
-                        context.getString(R.string.mindclash_final_level),
+                        context.getString(com.zeeko.mindclash.R.string.mindclash_final_level)
                     description = if (languageManager.isRTL()) "50 سؤال مستحيلة" else "50 impossible questions",
                     icon = 0,
                     color = 0xFF000000,
