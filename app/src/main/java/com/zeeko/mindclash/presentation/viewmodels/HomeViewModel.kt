@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import android.content.Context
 
 data class DifficultyLevel(
     val id: Int,
@@ -38,8 +37,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val questionRepository: QuestionRepository,
-    private val languageManager: LanguageManager,
-    private val context: Context
+    private val languageManager: LanguageManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -152,17 +150,15 @@ class HomeViewModel @Inject constructor(
                     questionCount = 50,
                     isUnlocked = _uiState.value.highestLevelUnlocked >= 9
                 ),
-                // بعد التعديل (يستخدم المورد الجديد):
                 DifficultyLevel(
                     id = 10,
-                    name = if (languageManager.isRTL()) 
-                        context.getString(com.zeeko.mindclash.R.string.mindclash_final_level)
+                    name = if (languageManager.isRTL()) "نهاية العقول" else "Mind's End",
                     description = if (languageManager.isRTL()) "50 سؤال مستحيلة" else "50 impossible questions",
                     icon = 0,
                     color = 0xFF000000,
                     questionCount = 50,
                     isUnlocked = _uiState.value.highestLevelUnlocked >= 10
-                  )
+                )
             )
             
             _uiState.update { state ->
