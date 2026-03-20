@@ -35,7 +35,7 @@
     <color name="level_infinite">#FFE91E63</color>
     <color name="level_final">#FF000000</color>
     
-    <!-- ألوان الأيقونة -->
+    <!-- ألوان الأيقونة - موجودة هنا فقط -->
     <color name="ic_launcher_background">#FF6C63FF</color>
     <color name="ic_launcher_gold">#FFFFD700</color>
     <color name="ic_launcher_gold_dark">#FFDAA520</color>
