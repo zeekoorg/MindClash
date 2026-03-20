@@ -52,9 +52,9 @@ class AdManager @Inject constructor(
     
     // معرفات الإعلانات (Yandex)
     companion object {
-        const val YANDEX_BANNER_ID = "R-M-18439206-3"
-        const val YANDEX_REWARDED_ID = "R-M-18439206-2"
-        const val YANDEX_INTERSTITIAL_ID = "R-M-18439206-4"
+        const val YANDEX_BANNER_ID = "demo-banner-yandex"
+        const val YANDEX_REWARDED_ID = "demo-rewarded-yandex"
+        const val YANDEX_INTERSTITIAL_ID = "demo-interstitial-yandex"
     }
     
     init {
