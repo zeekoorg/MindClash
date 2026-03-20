@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
@@ -22,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zeeko.mindclash.presentation.components.AnimatedBackground
 import com.zeeko.mindclash.presentation.viewmodels.GameViewModel
 import com.zeeko.mindclash.utils.LanguageManager
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +37,7 @@ fun GameScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
     val isTablet = configuration.screenWidthDp > 600
+    val languageManager = LanguageManager.getInstance()
     
     LaunchedEffect(Unit) {
         viewModel.loadQuestions()
@@ -46,7 +49,7 @@ fun GameScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = uiState.currentQuestion?.getCategory() ?: "",
+                            text = uiState.currentQuestion?.getCategory(languageManager.isRTL()) ?: "",
                             fontSize = if (isTablet) 24.sp else 18.sp
                         )
                     },
@@ -154,7 +157,8 @@ fun GameScreen(
                     GameContent(
                         uiState = uiState,
                         viewModel = viewModel,
-                        isTablet = isTablet
+                        isTablet = isTablet,
+                        languageManager = languageManager
                     )
                 }
                 
@@ -168,10 +172,11 @@ fun GameScreen(
                     VictoryScreen(
                         points = uiState.levelPoints * uiState.correctAnswersCount,
                         correctAnswers = uiState.correctAnswersCount,
-                        totalQuestions = 5, // 5 أسئلة لكل مستوى
+                        totalQuestions = 5,
                         onNextLevel = {
                             onGameComplete(uiState.userPoints)
-                        }
+                        },
+                        languageManager = languageManager
                     )
                 }
             }
@@ -183,7 +188,8 @@ fun GameScreen(
 fun GameContent(
     uiState: GameUiState,
     viewModel: GameViewModel,
-    isTablet: Boolean
+    isTablet: Boolean,
+    languageManager: LanguageManager
 ) {
     Column(
         modifier = Modifier
@@ -193,7 +199,7 @@ fun GameContent(
     ) {
         // مؤشر التقدم
         LinearProgressIndicator(
-            progress = (uiState.currentQuestionIndex % 5) / 5f,
+            progress = { ((uiState.currentQuestionIndex - 1) % 5) / 5f },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(if (isTablet) 12.dp else 8.dp)
@@ -205,7 +211,7 @@ fun GameContent(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = if (LanguageManager.isRTL())
+            text = if (languageManager.isRTL())
                 "السؤال ${(uiState.currentQuestionIndex - 1) % 5 + 1}/5"
             else
                 "Question ${(uiState.currentQuestionIndex - 1) % 5 + 1}/5",
@@ -224,7 +230,7 @@ fun GameContent(
             shape = MaterialTheme.shapes.large
         ) {
             Text(
-                text = uiState.currentQuestion?.getQuestion() ?: "",
+                text = uiState.currentQuestion?.getQuestion(languageManager.isRTL()) ?: "",
                 fontSize = if (isTablet) 32.sp else 24.sp,
                 color = Color.White,
                 textAlign = TextAlign.Center,
@@ -296,7 +302,7 @@ fun GameContent(
                 ) {
                     Icon(Icons.Default.Lightbulb, contentDescription = "Hint", tint = Color.White)
                     Text(
-                        text = if (LanguageManager.isRTL()) "تلميح" else "Hint",
+                        text = if (languageManager.isRTL()) "تلميح" else "Hint",
                         fontSize = 10.sp,
                         color = Color.White
                     )
@@ -314,7 +320,7 @@ fun GameContent(
                 ) {
                     Icon(Icons.Default.TextFields, contentDescription = "Reveal", tint = Color.White)
                     Text(
-                        text = if (LanguageManager.isRTL()) "كشف" else "Reveal",
+                        text = if (languageManager.isRTL()) "كشف" else "Reveal",
                         fontSize = 10.sp,
                         color = Color.White
                     )
@@ -336,7 +342,7 @@ fun GameContent(
                         color = Color.White
                     )
                     Text(
-                        text = if (LanguageManager.isRTL()) "فرصة" else "Chance",
+                        text = if (languageManager.isRTL()) "فرصة" else "Chance",
                         fontSize = 10.sp,
                         color = Color.White
                     )
@@ -431,7 +437,8 @@ fun VictoryScreen(
     points: Int,
     correctAnswers: Int,
     totalQuestions: Int,
-    onNextLevel: () -> Unit
+    onNextLevel: () -> Unit,
+    languageManager: LanguageManager
 ) {
     val configuration = LocalConfiguration.current
     val isTablet = configuration.screenWidthDp > 600
@@ -468,7 +475,7 @@ fun VictoryScreen(
                     modifier = Modifier.padding(24.dp)
                 ) {
                     Text(
-                        text = if (LanguageManager.isRTL()) "أحسنت! 🎉" else "Victory! 🎉",
+                        text = if (languageManager.isRTL()) "أحسنت! 🎉" else "Victory! 🎉",
                         fontSize = if (isTablet) 48.sp else 32.sp,
                         color = Color.White,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -477,7 +484,7 @@ fun VictoryScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = if (LanguageManager.isRTL())
+                        text = if (languageManager.isRTL())
                             "لقد أجبت على $correctAnswers من $totalQuestions إجابات صحيحة"
                         else
                             "You answered $correctAnswers out of $totalQuestions correctly",
@@ -489,13 +496,13 @@ fun VictoryScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     Text(
-                        text = if (LanguageManager.isRTL()) "لقد ربحت" else "You earned",
+                        text = if (languageManager.isRTL()) "لقد ربحت" else "You earned",
                         fontSize = if (isTablet) 18.sp else 14.sp,
                         color = Color.White.copy(alpha = 0.9f)
                     )
                     
                     Text(
-                        text = "$points " + if (LanguageManager.isRTL()) "نقطة" else "points",
+                        text = "$points " + if (languageManager.isRTL()) "نقطة" else "points",
                         fontSize = if (isTablet) 48.sp else 36.sp,
                         color = Color(0xFFFFD700),
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -514,7 +521,7 @@ fun VictoryScreen(
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
-                            text = if (LanguageManager.isRTL()) "العودة للرئيسية" else "Back to Home",
+                            text = if (languageManager.isRTL()) "العودة للرئيسية" else "Back to Home",
                             fontSize = if (isTablet) 22.sp else 18.sp,
                             color = Color.Black
                         )
