@@ -1,4 +1,4 @@
-package com.zeeko.mindclash.utils
+herepackage com.zeeko.mindclash.utils
 
 import android.content.Context
 import android.content.res.Configuration
@@ -26,8 +26,9 @@ class LanguageManager @Inject constructor(
         private val LANGUAGE_KEY = stringPreferencesKey("app_language")
         const val LANG_ARABIC = "ar"
         const val LANG_ENGLISH = "en"
-        private var currentLanguage = LANG_ARABIC
     }
+    
+    private var currentLanguage = LANG_ARABIC
     
     fun init(context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -63,8 +64,4 @@ class LanguageManager @Inject constructor(
     fun isRTL(): Boolean = currentLanguage == LANG_ARABIC
     
     fun getString(stringId: Int): String = context.getString(stringId)
-    
-    companion object {
-        fun isRTL(): Boolean = currentLanguage == LANG_ARABIC
-    }
 }
