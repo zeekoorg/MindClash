@@ -87,7 +87,7 @@ fun AnimatedBackground(
             drawCircle(
                 color = Color.hsv(hue, 0.5f, 0.3f).copy(alpha = 0.3f),
                 radius = size.minDimension / 3,
-                center = Offset(circle1X, circle1Y)
+                center = Offset(circle1X.toFloat(), circle1Y.toFloat())
             )
             
             drawCircle(
