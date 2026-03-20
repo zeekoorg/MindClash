@@ -53,11 +53,10 @@ class GameViewModel @Inject constructor(
         loadQuestions()
     }
     
-    private fun loadQuestions() {
+    fun loadQuestions() {
         viewModelScope.launch {
             questions = questionRepository.getQuestionsByDifficultyLevel(difficulty)
             if (questions.isNotEmpty()) {
-                // نبدأ من السؤال المناسب حسب levelId
                 val startIndex = (levelId - 1) * 5
                 if (startIndex < questions.size) {
                     loadQuestion(startIndex)
@@ -74,7 +73,7 @@ class GameViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     currentQuestion = question,
-                    currentAnswer = arrayOfNulls(question.getAnswer().length),
+                    currentAnswer = arrayOfNulls(question.getAnswer(languageManager.isRTL()).length),
                     totalQuestions = questions.size,
                     currentQuestionIndex = index + 1,
                     isCompleted = false,
@@ -85,7 +84,6 @@ class GameViewModel @Inject constructor(
                 )
             }
         } else {
-            // اكتملت جميع الأسئلة
             _uiState.update { it.copy(isCompleted = true, showVictory = true) }
             updateUserProgress()
         }
@@ -101,7 +99,6 @@ class GameViewModel @Inject constructor(
             }
             
             if (_uiState.value.timeRemaining == 0 && _uiState.value.isTimerRunning) {
-                // انتهى الوقت - إجابة خاطئة
                 handleWrongAnswer()
             }
         }
@@ -115,7 +112,6 @@ class GameViewModel @Inject constructor(
             currentAnswer[firstEmptyIndex] = char
             _uiState.update { it.copy(currentAnswer = currentAnswer) }
             
-            // تحقق من الإجابة إذا اكتملت
             if (currentAnswer.none { it == null }) {
                 checkAnswer()
             }
@@ -138,13 +134,11 @@ class GameViewModel @Inject constructor(
         
         if (question != null) {
             val answerString = currentAnswer.joinToString("")
-            val correctAnswer = question.getAnswer()
+            val correctAnswer = question.getAnswer(languageManager.isRTL())
             
             if (answerString.equals(correctAnswer, ignoreCase = true)) {
-                // إجابة صحيحة
                 handleCorrectAnswer()
             } else {
-                // إجابة خاطئة
                 handleWrongAnswer()
             }
         }
@@ -154,7 +148,6 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             val pointsEarned = _uiState.value.levelPoints
             
-            // تحديث النقاط
             questionRepository.addPoints(pointsEarned)
             questionRepository.incrementCorrectAnswers()
             
@@ -184,17 +177,15 @@ class GameViewModel @Inject constructor(
             }
             
             if (newLives <= 0) {
-                // انتهت المحاولات
                 delay(1500)
                 _uiState.update { it.copy(isCompleted = true) }
             } else {
                 delay(1000)
-                // إعادة تعيين الإجابة
                 val question = _uiState.value.currentQuestion
                 question?.let {
                     _uiState.update { state ->
                         state.copy(
-                            currentAnswer = arrayOfNulls(it.getAnswer().length),
+                            currentAnswer = arrayOfNulls(it.getAnswer(languageManager.isRTL()).length),
                             timeRemaining = 60,
                             isTimerRunning = true
                         )
@@ -217,7 +208,7 @@ class GameViewModel @Inject constructor(
     private fun updateUserProgress() {
         viewModelScope.launch {
             questionRepository.incrementGamesPlayed()
-            if (difficulty >= _uiState.value.highestLevelUnlocked) {
+            if (difficulty + 1 > _uiState.value.highestLevelUnlocked) {
                 questionRepository.updateHighestLevel(difficulty + 1)
             }
         }
@@ -232,9 +223,8 @@ class GameViewModel @Inject constructor(
         val currentAnswer = _uiState.value.currentAnswer
         
         if (question != null) {
-            val correctAnswer = question.getAnswer()
+            val correctAnswer = question.getAnswer(languageManager.isRTL())
             
-            // ابحث عن أول حرف خاطئ أو فارغ
             for (i in correctAnswer.indices) {
                 if (currentAnswer[i] == null || currentAnswer[i] != correctAnswer[i]) {
                     currentAnswer[i] = correctAnswer[i]
