@@ -23,9 +23,6 @@
         android:largeHeap="true"
         tools:targetApi="31">
         
-        <meta-data
-            android:name="com.yandex.mobile.ads.AD_UNIT_ID"
-            android:value="R-M-18439206-3" />
 
         <activity
             android:name=".MainActivity"
