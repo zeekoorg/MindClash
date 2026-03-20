@@ -21,14 +21,12 @@ import com.yandex.mobile.ads.interstitial.InterstitialAdEventListener
 import com.yandex.mobile.ads.interstitial.InterstitialAdLoadListener
 import com.yandex.mobile.ads.interstitial.InterstitialAdLoader
 import com.yandex.mobile.ads.rewarded.*
-import com.zeeko.mindclash.utils.LanguageManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AdManager @Inject constructor(
-    private val context: Context,
-    private val languageManager: LanguageManager
+    private val context: Context
 ) {
     
     // ============================================================
@@ -207,7 +205,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (20 * density).toInt())
             }
-            text = if (languageManager.isRTL()) "جاري تـحـميل الإعـــلان..." else "Loading ad..."
+            text = "جاري تـحـميل الإعـــلان..." // نص عربي فقط
             setTextColor(Color.WHITE)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -309,10 +307,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (25 * density).toInt())
             }
-            text = if (LanguageManager.isRTL()) 
-                "فـشــل تـحـمـيـل الإعــلان 😥\nحاول مرة أخرى لاحقاً"
-            else 
-                "Failed to load ad 😥\nPlease try again later"
+            text = "فـشــل تـحـمـيـل الإعــلان 😥\nحاول مرة أخرى لاحقاً" // نص عربي فقط
             setTextColor(Color.WHITE)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -326,7 +321,7 @@ class AdManager @Inject constructor(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 (45 * density).toInt()
             )
-            text = if (LanguageManager.isRTL()) "موافق" else "OK"
+            text = "موافق" // نص عربي فقط
             setTextColor(Color.WHITE)
             textSize = 14f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -406,10 +401,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (25 * density).toInt())
             }
-            text = if (languageManager.isRTL()) 
-                "للإستمرار يجـب علـيـك مـشـاهـدة إعــلان كـ دعـمـاً لـي لأسـتـمـر بـتقـديـم الـمـزيـد 🤍"
-            else 
-                "To continue, you must watch an ad as support for me to continue providing more 🤍"
+            text = "للإستمرار يجـب علـيـك مـشـاهـدة إعــلان كـ دعـمـاً لـي لأسـتـمـر بـتقـديـم الـمـزيـد 🤍" // نص عربي فقط
             setTextColor(Color.WHITE)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -446,7 +438,7 @@ class AdManager @Inject constructor(
             ).apply {
                 setMargins(0, 0, 0, (10 * density).toInt())
             }
-            text = if (languageManager.isRTL()) "مـشـاهـدة" else "Watch"
+            text = "مـشـاهـدة" // نص عربي فقط
             setTextColor(Color.WHITE)
             textSize = 14f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -458,7 +450,7 @@ class AdManager @Inject constructor(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 (45 * density).toInt()
             )
-            text = if (languageManager.isRTL()) "إلـغـاء" else "Cancel"
+            text = "إلـغـاء" // نص عربي فقط
             setTextColor(Color.WHITE)
             textSize = 14f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -508,7 +500,7 @@ class AdManager @Inject constructor(
             } catch (ex: Exception) {
                 android.widget.Toast.makeText(
                     activity, 
-                    if (languageManager.isRTL()) "خطأ في فتح رابط التحميل" else "Error opening download link", 
+                    "خطأ في فتح رابط التحميل", // نص عربي فقط
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
