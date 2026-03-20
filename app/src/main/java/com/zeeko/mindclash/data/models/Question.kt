@@ -2,7 +2,6 @@ package com.zeeko.mindclash.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.zeeko.mindclash.utils.LanguageManager
 
 @Entity(tableName = "questions")
 data class Question(
@@ -21,16 +20,8 @@ data class Question(
     val isLocked: Boolean = true,
     val orderIndex: Int
 ) {
-    // دالة مساعدة للحصول على النص حسب اللغة - تستقبل LanguageManager كمعامل
-    fun getQuestion(languageManager: LanguageManager): String = 
-        if (languageManager.isRTL()) questionAr else questionEn
-    
-    fun getAnswer(languageManager: LanguageManager): String = 
-        if (languageManager.isRTL()) answerAr else answerEn
-    
-    fun getHint(languageManager: LanguageManager): String = 
-        if (languageManager.isRTL()) hintAr else hintEn
-    
-    fun getCategory(languageManager: LanguageManager): String = 
-        if (languageManager.isRTL()) categoryAr else categoryEn
+    fun getQuestion(isRTL: Boolean): String = if (isRTL) questionAr else questionEn
+    fun getAnswer(isRTL: Boolean): String = if (isRTL) answerAr else answerEn
+    fun getHint(isRTL: Boolean): String = if (isRTL) hintAr else hintEn
+    fun getCategory(isRTL: Boolean): String = if (isRTL) categoryAr else categoryEn
 }
