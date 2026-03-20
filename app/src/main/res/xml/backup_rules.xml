@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- قاعدة بيانات التطبيق -->
+    <include domain="database" path="mindclash_database"/>
+    
+    <!-- ملفات الإعدادات -->
+    <include domain="sharedpref" path="language_prefs.xml"/>
+    <include domain="sharedpref" path="game_prefs.xml"/>
+    
+    <!-- استبعاد الملفات المؤقتة -->
+    <exclude domain="file" path="cache"/>
+    <exclude domain="file" path="code_cache"/>
+</full-backup-content>
