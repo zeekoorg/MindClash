@@ -2,8 +2,13 @@ package com.zeeko.mindclash.ui.screens
 
 import android.app.Activity
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.*
+import com.zeeko.mindclash.R
 import com.zeeko.mindclash.ads.AdManager
 import com.zeeko.mindclash.ui.game.GameViewModel
 import com.zeeko.mindclash.ui.theme.*
@@ -43,253 +50,244 @@ fun GameScreen(
         viewModel.loadLevel(level)
     }
 
-    // إدارة حوار الخسارة (مع الإعلان البيني)
-    if (state.isGameOver) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("انتهت اللعبة! 💀", color = NeonRed, fontWeight = FontWeight.Bold) },
-            text = { Text("لقد نفذت محاولاتك. نقاطك: ${state.score}", color = Color.White) },
-            containerColor = DarkSurface,
-            confirmButton = {
-                Button(
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonRed),
-                    onClick = {
-                        // عرض إعلان بيني ثم العودة للرئيسية
-                        adManager.showInterstitialAd(context) { onNavigateBack() }
-                    }
-                ) { Text("العودة للرئيسية", color = Color.White, fontWeight = FontWeight.Bold) }
-            }
-        )
-    }
-
-    // إدارة حوار الفوز (مع الإعلان البيني)
-    if (state.isLevelComplete) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("انتصار! 🎉", color = NeonGreen, fontWeight = FontWeight.Bold) },
-            text = { Text("أكملت المستوى بنجاح! نقاطك: ${state.score}", color = Color.White) },
-            containerColor = DarkSurface,
-            confirmButton = {
-                Button(
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonBlue),
-                    onClick = {
-                        adManager.showInterstitialAd(context) { onNavigateBack() }
-                    }
-                ) { Text("رائع", color = Color.White, fontWeight = FontWeight.Bold) }
-            }
-        )
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF020617))))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // شريط الإحصائيات العلوي
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatItem("⭐", state.score.toString(), Gold)
-            StatItem("❤️", state.lives.toString(), NeonRed)
-            StatItem("⏱️", state.timeLeft.toString(), if (state.timeLeft <= 10) NeonRed else Color.White)
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        // بطاقة السؤال (زجاجية)
-        Box(
+    Box(modifier = Modifier.fillMaxSize()) {
+        // --- 🎮 الواجهة الأساسية للعبة ---
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.White.copy(alpha = 0.05f))
-                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                .padding(30.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF020617))))
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = state.currentQuestion?.question ?: "جاري التحميل...",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // شريط الإحصائيات
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatItem("⭐", state.score.toString(), Gold)
+                StatItem("❤️", state.lives.toString(), NeonRed)
+                StatItem("⏱️", state.timeLeft.toString(), if (state.timeLeft <= 10) NeonRed else Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // بطاقة السؤال (Glassmorphism)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                    .padding(30.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = state.currentQuestion?.question ?: "جاري التحميل...",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // مربعات الإجابة تتوهج
+            val answerLength = state.currentQuestion?.answer?.length ?: 0
+            val borderColor by animateColorAsState(
+                targetValue = when {
+                    state.showCorrectAnimation -> NeonGreen
+                    state.showWrongAnimation -> NeonRed
+                    else -> NeonBlue
+                },
+                animationSpec = tween(durationMillis = 300),
+                label = "BorderColor"
             )
-        }
 
-        Spacer(modifier = Modifier.height(30.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                for (i in 0 until answerLength) {
+                    val char = state.userAnswer.getOrNull(i)?.toString() ?: ""
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(45.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.1f))
+                            .border(2.dp, borderColor, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = char, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
 
-        // مربعات الإجابة (تتوهج أخضر للصح وأحمر للخطأ)
-        val answerLength = state.currentQuestion?.answer?.length ?: 0
-        val borderColor by animateColorAsState(
-            targetValue = when {
-                state.showCorrectAnimation -> NeonGreen
-                state.showWrongAnimation -> NeonRed
-                else -> NeonBlue
-            },
-            animationSpec = tween(durationMillis = 300),
-            label = "BorderColorAnimation"
-        )
+            Spacer(modifier = Modifier.weight(1f))
 
-        // استخدام Scroll في حال كانت الإجابة طويلة
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            for (i in 0 until answerLength) {
-                val char = state.userAnswer.getOrNull(i)?.toString() ?: ""
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(45.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.1f))
-                        .border(2.dp, borderColor, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = char, 
-                        color = Color.White, 
-                        fontSize = 22.sp, 
-                        fontWeight = FontWeight.Bold
+            // أزرار المساعدة
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                HelpButton(icon = "💡", text = "تلميح", color = Gold) {
+                    adManager.showRewardedAd(
+                        activity = context,
+                        onRewardEarned = { Toast.makeText(context, "التلميح: ${state.currentQuestion?.hint}", Toast.LENGTH_LONG).show() },
+                        onAdFailed = { Toast.makeText(context, "فشل تحميل الإعلان", Toast.LENGTH_SHORT).show() }
+                    )
+                }
+                HelpButton(icon = "🔍", text = "كشف حرف", color = NeonGreen) {
+                    adManager.showRewardedAd(
+                        activity = context,
+                        onRewardEarned = { viewModel.revealLetter() },
+                        onAdFailed = { Toast.makeText(context, "فشل تحميل الإعلان", Toast.LENGTH_SHORT).show() }
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // الكيبورد الأبجدي
+            NeonKeyboard(
+                onLetterClick = { viewModel.onLetterClick(it) },
+                onDeleteClick = { viewModel.onDeleteClick() }
+            )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        // --- ✨ طبقة الأنميشن (Lottie) للإجابات ---
+        if (state.showCorrectAnimation) {
+            LottieOverlay(animationRes = R.raw.correct_anim) // تأكد من وضع الملف في res/raw
+        }
+        if (state.showWrongAnimation) {
+            LottieOverlay(animationRes = R.raw.wrong_anim) // تأكد من وضع الملف في res/raw
+        }
 
-        // أزرار المساعدة (إعلانات المكافأة)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        // --- 🏆 شاشة الفوز الأسطورية (Level Complete) ---
+        AnimatedVisibility(
+            visible = state.isLevelComplete,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
         ) {
-            HelpButton(icon = "💡", text = "تلميح", color = Gold) {
-                adManager.showRewardedAd(
-                    activity = context,
-                    onRewardEarned = { Toast.makeText(context, "التلميح: ${state.currentQuestion?.hint}", Toast.LENGTH_LONG).show() },
-                    onAdFailed = { Toast.makeText(context, "فشل تحميل الإعلان", Toast.LENGTH_SHORT).show() }
-                )
-            }
-            HelpButton(icon = "🔍", text = "كشف حرف", color = NeonGreen) {
-                adManager.showRewardedAd(
-                    activity = context,
-                    onRewardEarned = { viewModel.revealLetter() },
-                    onAdFailed = { Toast.makeText(context, "فشل تحميل الإعلان", Toast.LENGTH_SHORT).show() }
-                )
-            }
+            LevelResultOverlay(
+                title = "انتصار! 🎉",
+                message = "أكملت المستوى بنجاح!",
+                score = state.score,
+                lottieRes = R.raw.win_anim, // تأكد من وضع الملف في res/raw
+                buttonText = "رائع",
+                buttonColor = NeonBlue,
+                onClick = { adManager.showInterstitialAd(context) { onNavigateBack() } }
+            )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        // --- 💀 شاشة الخسارة (Game Over) ---
+        AnimatedVisibility(
+            visible = state.isGameOver,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            LevelResultOverlay(
+                title = "انتهت اللعبة! 💀",
+                message = "لقد نفذت محاولاتك.",
+                score = state.score,
+                lottieRes = null,
+                buttonText = "العودة للخريطة",
+                buttonColor = NeonRed,
+                onClick = { adManager.showInterstitialAd(context) { onNavigateBack() } }
+            )
+        }
+    }
+}
 
-        // لوحة المفاتيح الأبجدية المتوهجة
-        NeonKeyboard(
-            onLetterClick = { viewModel.onLetterClick(it) },
-            onDeleteClick = { viewModel.onDeleteClick() }
+// مشغل أنميشن Lottie كطبقة شفافة فوق اللعبة
+@Composable
+fun LottieOverlay(animationRes: Int) {
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(animationRes))
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = 1 // يعمل مرة واحدة فقط عند الإجابة
+    )
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        LottieAnimation(
+            composition = composition,
+            progress = { progress },
+            modifier = Modifier.size(200.dp)
         )
     }
 }
 
+// شاشة النتيجة الفاخرة (زجاجية وتملأ الشاشة)
 @Composable
-fun StatItem(icon: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = icon, fontSize = 24.sp)
-        Text(text = value, color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun HelpButton(icon: String, text: String, color: Color, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = color.copy(alpha = 0.2f)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color),
-        shape = RoundedCornerShape(20.dp)
-    ) {
-        Text(text = "$icon $text", color = color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-    }
-}
-
-@Composable
-fun NeonKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
-    // 32 حرفاً مقسمة إلى 4 صفوف (8 حروف في كل صف) لتوازن مثالي
-    val rows = listOf(
-        listOf('أ', 'ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ'),
-        listOf('د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض'),
-        listOf('ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل'),
-        listOf('م', 'ن', 'ه', 'و', 'ي', 'ى', 'ئ', 'ة')
-    )
-    
-    Column(
+fun LevelResultOverlay(
+    title: String,
+    message: String,
+    score: Int,
+    lottieRes: Int?,
+    buttonText: String,
+    buttonColor: Color,
+    onClick: () -> Unit
+) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.8f)) // تعتيم الخلفية
+            .clickable(enabled = false) {}, // لمنع الضغط على اللعبة في الخلف
+        contentAlignment = Alignment.Center
     ) {
-        // رسم شبكة الحروف الأبجدية
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                row.forEach { char ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f) // يضمن توزيع الحروف بالتساوي
-                            .aspectRatio(1f) // يجعل الزر مربعاً بشكل مثالي
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.White.copy(alpha = 0.05f))
-                            .clickable { onLetterClick(char) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = char.toString(), 
-                            color = Color.White, 
-                            fontSize = 20.sp, 
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-        
-        // صف الأزرار السفلية (المسافة + المسح)
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth(0.85f)
+                .clip(RoundedCornerShape(30.dp))
+                .background(Color(0xFF131A2A).copy(alpha = 0.9f))
+                .border(2.dp, buttonColor.copy(alpha = 0.5f), RoundedCornerShape(30.dp))
+                .padding(30.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // زر المسافة
-            Button(
-                onClick = { onLetterClick(' ') },
-                colors = ButtonDefaults.buttonColors(containerColor = NeonBlue.copy(alpha = 0.3f)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .weight(2f)
-                    .height(50.dp)
-            ) {
-                Text("مسافة", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            // تشغيل أنميشن الاحتفال إذا كان موجوداً
+            if (lottieRes != null) {
+                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(lottieRes))
+                val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
+                LottieAnimation(composition, { progress }, modifier = Modifier.size(150.dp))
             }
+
+            Text(text = title, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = buttonColor)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(text = message, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(20.dp))
             
-            // زر المسح
-            Button(
-                onClick = onDeleteClick,
-                colors = ButtonDefaults.buttonColors(containerColor = NeonRed.copy(alpha = 0.8f)),
-                shape = RoundedCornerShape(12.dp),
+            // عرض النقاط بشكل بارز
+            Box(
                 modifier = Modifier
-                    .weight(1.5f)
-                    .height(50.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(horizontal = 30.dp, vertical = 15.dp)
             ) {
-                Text("⌫ مسح", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(text = "النقاط: $score ⭐", fontSize = 24.sp, color = Gold, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+                Text(text = buttonText, fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
+
+// ... (يرجى إبقاء كود StatItem و HelpButton و NeonKeyboard كما هي من الرد السابق لتوفير المساحة) ...
+
