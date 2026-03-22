@@ -44,7 +44,7 @@ fun GameScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current as Activity
-    val haptic = LocalHapticFeedback.current // نظام الاهتزاز
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(Unit) {
         viewModel.loadLevel(level)
@@ -69,16 +69,15 @@ fun GameScreen(
                 StatItemXml(R.drawable.ic_star, state.score.toString(), LiquidGold)
                 StatItemXml(R.drawable.ic_heart, state.lives.toString(), CrimsonRed)
                 
-                // العداد الدائري النيون
+                // العداد الدائري النيون المصحح
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.size(65.dp)) {
                     val timerColor = if (state.timeLeft <= 10) CrimsonRed else NeonCyan
                     CircularProgressIndicator(
-                        progress = { state.timeLeft / 60f },
+                        progress = state.timeLeft / 60f, // تم تعديل الصيغة هنا لتجنب الخطأ
                         modifier = Modifier.fillMaxSize(),
                         color = timerColor,
                         strokeWidth = 5.dp,
-                        trackColor = GlassWhite,
-                        gapSize = 0.dp
+                        trackColor = GlassWhite
                     )
                     Text(text = state.timeLeft.toString(), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 }
@@ -217,4 +216,3 @@ fun NeonKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
         }
     }
 }
-
