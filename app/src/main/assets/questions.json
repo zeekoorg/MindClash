@@ -1,0 +1,242 @@
+[
+  {
+    "question": "ما عاصمة فرنسا؟",
+    "answer": "باريس",
+    "hint": "مدينة النور",
+    "category": "جغرافيا",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "ما عاصمة مصر؟",
+    "answer": "القاهرة",
+    "hint": "أم الدنيا",
+    "category": "جغرافيا",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "كم عدد ألوان قوس قزح؟",
+    "answer": "سبعة",
+    "hint": "7",
+    "category": "علوم",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "ما هو أكبر كوكب في المجموعة الشمسية؟",
+    "answer": "المشتري",
+    "hint": "عملاق الغازات",
+    "category": "فلك",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "ما هو أطول نهر في العالم؟",
+    "answer": "النيل",
+    "hint": "يمر بمصر",
+    "category": "جغرافيا",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "من هو العالم الذي اكتشف الجاذبية؟",
+    "answer": "نيوتن",
+    "hint": "تفاحة",
+    "category": "علوم",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "ما هي عاصمة اليابان؟",
+    "answer": "طوكيو",
+    "hint": "أكبر مدينة في العالم",
+    "category": "جغرافيا",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "ما هو العنصر الكيميائي الذي رمزه O؟",
+    "answer": "أكسجين",
+    "hint": "نحتاجه للتنفس",
+    "category": "كيمياء",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "في أي عام هبط الإنسان على القمر؟",
+    "answer": "1969",
+    "hint": "الستينات",
+    "category": "تاريخ",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "ما هي أكبر قارة في العالم؟",
+    "answer": "آسيا",
+    "hint": "تضم الصين والهند",
+    "category": "جغرافيا",
+    "difficulty": 1,
+    "points": 100
+  },
+  {
+    "question": "من هو مؤلف مسرحية هاملت؟",
+    "answer": "شكسبير",
+    "hint": "كاتب إنجليزي شهير",
+    "category": "أدب",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هي عاصمة كندا؟",
+    "answer": "أوتاوا",
+    "hint": "ليست تورونتو",
+    "category": "جغرافيا",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هو الكوكب المعروف بالكوكب الأحمر؟",
+    "answer": "المريخ",
+    "hint": "الرابع من الشمس",
+    "category": "فلك",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "من هو أول رئيس للولايات المتحدة؟",
+    "answer": "واشنطن",
+    "hint": "على العملة الورقية",
+    "category": "تاريخ",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هي عاصمة أستراليا؟",
+    "answer": "كانبرا",
+    "hint": "ليست سيدني",
+    "category": "جغرافيا",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هو أسرع حيوان على وجه الأرض؟",
+    "answer": "الفهد",
+    "hint": "سنوري",
+    "category": "حيوانات",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "في أي عام بدأت الحرب العالمية الأولى؟",
+    "answer": "1914",
+    "hint": "أوائل القرن العشرين",
+    "category": "تاريخ",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هي عاصمة ألمانيا؟",
+    "answer": "برلين",
+    "hint": "مدينة الجدار",
+    "category": "جغرافيا",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هو أكبر محيط في العالم؟",
+    "answer": "الهادي",
+    "hint": "يغطي ثلث الأرض",
+    "category": "جغرافيا",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هي عاصمة إيطاليا؟",
+    "answer": "روما",
+    "hint": "المدينة الخالدة",
+    "category": "جغرافيا",
+    "difficulty": 2,
+    "points": 150
+  },
+  {
+    "question": "ما هي عاصمة إسبانيا؟",
+    "answer": "مدريد",
+    "hint": "مدينة الملوك",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة تركيا؟",
+    "answer": "أنقرة",
+    "hint": "ليست إسطنبول",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة روسيا؟",
+    "answer": "موسكو",
+    "hint": "مدينة الكرملين",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة الهند؟",
+    "answer": "نيودلهي",
+    "hint": "مدينة الأعمدة",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة الصين؟",
+    "answer": "بكين",
+    "hint": "المدينة المحرمة",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة البرازيل؟",
+    "answer": "برازيليا",
+    "hint": "مدينة المستقبل",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة الأرجنتين؟",
+    "answer": "بوينس آيرس",
+    "hint": "مدينة الرياح الطيبة",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة المكسيك؟",
+    "answer": "مكسيكو سيتي",
+    "hint": "أكبر مدينة في أمريكا",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة جنوب أفريقيا؟",
+    "answer": "بريتوريا",
+    "hint": "إحدى العواصم الثلاث",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  },
+  {
+    "question": "ما هي عاصمة نيوزيلندا؟",
+    "answer": "ويلينغتون",
+    "hint": "ليست أوكلاند",
+    "category": "جغرافيا",
+    "difficulty": 3,
+    "points": 200
+  }
+]
