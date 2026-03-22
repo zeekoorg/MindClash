@@ -4,11 +4,12 @@ import android.app.Activity
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -29,11 +32,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.airbnb.lottie.compose.*
-import com.zeeko.mindclash.R
 import com.zeeko.mindclash.ads.AdManager
 import com.zeeko.mindclash.ui.game.GameViewModel
+import com.zeeko.mindclash.ui.game.NeoCorrectOverlay
+import com.zeeko.mindclash.ui.game.NeoWrongOverlay
 import com.zeeko.mindclash.ui.theme.*
+import kotlin.random.Random
 
 @Composable
 fun GameScreen(
@@ -45,6 +49,7 @@ fun GameScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current as Activity
 
+    // تحميل المستوى أول مرة
     LaunchedEffect(Unit) {
         viewModel.loadLevel(level)
     }
@@ -72,7 +77,7 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // بطاقة السؤال الزجاجية
+            // بطاقة السؤال (Glassmorphism)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -93,7 +98,7 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // مربعات الإجابة
+            // مربعات الإجابة تتوهج
             val answerLength = state.currentQuestion?.answer?.length ?: 0
             val borderColor by animateColorAsState(
                 targetValue = when {
@@ -152,121 +157,69 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // الكيبورد الأبجدي
+            // الكيبورد الأبجدي المخصص
             NeonKeyboard(
                 onLetterClick = { viewModel.onLetterClick(it) },
                 onDeleteClick = { viewModel.onDeleteClick() }
             )
         }
 
-        // --- ✨ طبقة الأنميشن للإجابات ---
-        if (state.showCorrectAnimation) {
-            LottieOverlay(animationRes = R.raw.correct_anim)
+        // --- ✨ طبقات الأنميشن المبرمجة محلياً (Native) ---
+        AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) {
+            NeoCorrectOverlay() // التأثير موجود في ملف UiEffects.kt
         }
-        if (state.showWrongAnimation) {
-            LottieOverlay(animationRes = R.raw.wrong_anim)
+        AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) {
+            NeoWrongOverlay() // التأثير موجود في ملف UiEffects.kt
         }
 
-        // --- 🏆 شاشة الفوز الأسطورية ---
+        // --- 🏆 شاشة الفوز الأسطورية (المستوى اكتمل) ---
         AnimatedVisibility(
             visible = state.isLevelComplete,
-            enter = fadeIn() + scaleIn(),
+            enter = fadeIn() + scaleIn(animationSpec = tween(500)),
             exit = fadeOut() + scaleOut()
         ) {
-            LevelResultOverlay(
-                title = "انتصار! 🎉",
-                message = "أكملت المستوى بنجاح!",
+            LegendaryResultOverlay(
+                title = "انتصار أسطوري! 🎉",
+                message = "تم تدمير المستوى ${state.currentLevel} بنجاح!",
                 score = state.score,
-                lottieRes = R.raw.win_anim,
-                buttonText = "رائع",
+                isWin = true,
+                buttonText = "المستوى التالي ➡",
                 buttonColor = NeonBlue,
-                onClick = { adManager.showInterstitialAd(context) { onNavigateBack() } }
+                onClick = {
+                    adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) }
+                },
+                onGoHome = {
+                    adManager.showInterstitialAd(context) { onNavigateBack() }
+                }
             )
         }
 
-        // --- 💀 شاشة الخسارة ---
+        // --- 💀 شاشة الخسارة (انتهت المحاولات) ---
         AnimatedVisibility(
             visible = state.isGameOver,
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
-            LevelResultOverlay(
-                title = "انتهت اللعبة! 💀",
-                message = "لقد نفذت محاولاتك.",
+            LegendaryResultOverlay(
+                title = "سقطت العقول! 💀",
+                message = "لقد نفذت كل محاولاتك في المستوى ${state.currentLevel}.",
                 score = state.score,
-                lottieRes = null,
-                buttonText = "العودة للخريطة",
+                isWin = false,
+                buttonText = "إعادة المحاولة 🔄",
                 buttonColor = NeonRed,
-                onClick = { adManager.showInterstitialAd(context) { onNavigateBack() } }
+                onClick = {
+                    adManager.showInterstitialAd(context) { viewModel.resetGame() }
+                },
+                onGoHome = {
+                    adManager.showInterstitialAd(context) { onNavigateBack() }
+                }
             )
         }
     }
 }
 
-// مشغل Lottie للطبقات
-@Composable
-fun LottieOverlay(animationRes: Int) {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(animationRes))
-    val progress by animateLottieCompositionAsState(composition, iterations = 1)
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.size(200.dp))
-    }
-}
+// --- 💎 مكونات الشاشة (Components) ---
 
-// شاشة النتيجة الفاخرة الزجاجية
-@Composable
-fun LevelResultOverlay(
-    title: String, message: String, score: Int, lottieRes: Int?,
-    buttonText: String, buttonColor: Color, onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable(enabled = false) {},
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Color(0xFF131A2A).copy(alpha = 0.9f))
-                .border(2.dp, buttonColor.copy(alpha = 0.5f), RoundedCornerShape(30.dp))
-                .padding(30.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (lottieRes != null) {
-                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(lottieRes))
-                val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
-                LottieAnimation(composition, { progress }, modifier = Modifier.size(150.dp))
-            }
-            Text(text = title, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = buttonColor)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(text = message, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .padding(horizontal = 30.dp, vertical = 15.dp)
-            ) {
-                Text(text = "النقاط: $score ⭐", fontSize = 24.sp, color = Gold, fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.height(30.dp))
-            Button(
-                onClick = onClick,
-                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth().height(55.dp)
-            ) {
-                Text(text = buttonText, fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-// مكونات صغيرة (أزرار وإحصائيات)
 @Composable
 fun StatItem(icon: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -287,7 +240,6 @@ fun HelpButton(icon: String, text: String, color: Color, onClick: () -> Unit) {
     }
 }
 
-// لوحة المفاتيح الأبجدية المتوازنة
 @Composable
 fun NeonKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
     val rows = listOf(
@@ -349,3 +301,102 @@ fun NeonKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
     }
 }
 
+// --- 🎇 شاشة النتيجة الشاملة المبرمجة بالكامل (بدون Lottie) ---
+@Composable
+fun LegendaryResultOverlay(
+    title: String, message: String, score: Int, isWin: Boolean,
+    buttonText: String, buttonColor: Color, onClick: () -> Unit, onGoHome: () -> Unit
+) {
+    // أنميشن الأيقونة (نبض للكأس، واهتزاز للجمجمة)
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val iconScale by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(animation = tween(800, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse), label = "icon_scale"
+    )
+
+    // أنميشن تساقط القصاصات (للفوز فقط)
+    val particles = remember { List(100) { Particle() } }
+    val time by infiniteTransition.animateFloat(initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Restart), label = "time")
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.8f))
+            .clickable(enabled = false) {},
+        contentAlignment = Alignment.Center
+    ) {
+        // تشغيل نظام الجزيئات (قصاصات الورق) فقط في حالة الفوز
+        if (isWin) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                particles.forEach { particle ->
+                    val progress = (time + particle.timeOffset) % 1f
+                    val y = progress * size.height
+                    val x = particle.xOffset * size.width
+                    drawCircle(color = particle.color.copy(alpha = 1f - progress), radius = particle.size, center = Offset(x, y))
+                }
+            }
+        }
+
+        // بطاقة النتيجة الزجاجية
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .clip(RoundedCornerShape(30.dp))
+                .background(Color(0xFF131A2A).copy(alpha = 0.9f))
+                .border(2.dp, buttonColor.copy(alpha = 0.5f), RoundedCornerShape(30.dp))
+                .padding(30.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = if (isWin) "🏆" else "💀",
+                fontSize = 100.sp,
+                modifier = Modifier.scale(iconScale),
+                style = androidx.compose.ui.text.TextStyle(
+                    shadow = androidx.compose.ui.graphics.Shadow(color = if (isWin) Gold else NeonRed, blurRadius = 50f)
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(15.dp))
+            Text(text = title, fontSize = 32.sp, fontWeight = FontWeight.Black, color = buttonColor, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(text = message, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(25.dp))
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = " ⭐ ", fontSize = 30.sp)
+                Text(text = score.toString(), fontSize = 50.sp, color = Gold, fontWeight = FontWeight.Black)
+            }
+
+            Spacer(modifier = Modifier.height(35.dp))
+
+            // الأزرار الزجاجية المتوهجة
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(containerColor = buttonColor.copy(alpha = 0.2f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, buttonColor),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().height(55.dp)
+            ) {
+                Text(text = buttonText, fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(15.dp))
+            Button(
+                onClick = onGoHome,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray.copy(alpha = 0.2f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().height(55.dp)
+            ) {
+                Text(text = "العودة للخريطة 🏠", fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+// كلاس بيانات لقصاصات الورق الاحتفالية المبرمجة
+data class Particle(
+    val xOffset: Float = Random.nextFloat(),
+    val timeOffset: Float = Random.nextFloat(),
+    val size: Float = Random.nextFloat() * 8f + 4f,
+    val color: Color = listOf(NeonBlue, NeonPink, Gold, NeonGreen, NeonRed).random()
+)
