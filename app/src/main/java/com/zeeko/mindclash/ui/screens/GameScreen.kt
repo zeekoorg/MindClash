@@ -60,32 +60,19 @@ fun GameScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- 🌟 الإحصائيات الفاخرة ---
+            // --- 🌟 الإحصائيات (النجوم والقلوب فقط) ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatItemXml(R.drawable.ic_star, state.score.toString(), LiquidGold)
                 StatItemXml(R.drawable.ic_heart, state.lives.toString(), CrimsonRed)
-                
-                // العداد الدائري النيون المصحح
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(65.dp)) {
-                    val timerColor = if (state.timeLeft <= 10) CrimsonRed else NeonCyan
-                    CircularProgressIndicator(
-                        progress = state.timeLeft / 60f, // تم تعديل الصيغة هنا لتجنب الخطأ
-                        modifier = Modifier.fillMaxSize(),
-                        color = timerColor,
-                        strokeWidth = 5.dp,
-                        trackColor = GlassWhite
-                    )
-                    Text(text = state.timeLeft.toString(), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- 💡 التلميح الدائم (Glass Hint) ---
+            // --- 💡 التلميح الدائم ---
             AnimatedVisibility(visible = state.isHintVisible, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 Box(modifier = Modifier.fillMaxWidth().padding(bottom = 15.dp).clip(RoundedCornerShape(15.dp)).background(LiquidGold.copy(alpha = 0.15f)).border(1.dp, LiquidGold, RoundedCornerShape(15.dp)).padding(15.dp), contentAlignment = Alignment.Center) {
                     Text(text = "💡 تلميح: ${state.currentQuestion?.hint ?: ""}", color = LiquidGold, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
@@ -103,10 +90,7 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(30.dp))
 
             // --- 🔠 مربعات الإجابة النيون ---
-            val borderColor by animateColorAsState(
-                targetValue = when { state.showCorrectAnimation -> EmeraldGreen; state.showWrongAnimation -> CrimsonRed; else -> NeonCyan },
-                animationSpec = tween(300), label = "AnswerBorderColor"
-            )
+            val borderColor by animateColorAsState(targetValue = when { state.showCorrectAnimation -> EmeraldGreen; state.showWrongAnimation -> CrimsonRed; else -> NeonCyan }, animationSpec = tween(300), label = "")
             
             Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Center) {
                 val answerLength = state.currentQuestion?.answer?.length ?: 0
@@ -120,22 +104,22 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // --- 🆘 أزرار المساعدة وربط الإعلانات الذكي ---
+            // --- 🆘 أزرار المساعدة ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 HelpButton(icon = "💡", text = "كشف التلميح", color = LiquidGold) {
                     if (!state.isHintVisible) {
-                        adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.showPermanentHint() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، جرب بعد قليل", Toast.LENGTH_SHORT).show() })
+                        adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.showPermanentHint() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
                     }
                 }
                 HelpButton(icon = "🔍", text = "كشف حرف", color = NeonCyan) {
-                    adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.revealLetter() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، جرب بعد قليل", Toast.LENGTH_SHORT).show() })
+                    adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.revealLetter() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- ⌨️ لوحة المفاتيح والاهتزاز اللمسي ---
-            NeonKeyboard(
+            // --- ⌨️ الكيبورد المزدوج (حروف وأرقام) ---
+            NeonDualKeyboard(
                 onLetterClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     viewModel.onLetterClick(it)
@@ -147,11 +131,10 @@ fun GameScreen(
             )
         }
 
-        // --- ✨ طبقات الأنميشن والمؤثرات ---
+        // --- الأنميشن والشاشات المنبثقة ---
         AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlay() }
         AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlay() }
 
-        // --- 🏆 شاشة الفوز ---
         AnimatedVisibility(visible = state.isLevelComplete, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
             LegendaryResultOverlay(
                 title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ➡", buttonColor = NeonCyan,
@@ -160,7 +143,6 @@ fun GameScreen(
             )
         }
 
-        // --- 💀 شاشة الخسارة ---
         AnimatedVisibility(visible = state.isGameOver, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
             LegendaryResultOverlay(
                 title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "انتقام (إعادة) 🔄", buttonColor = CrimsonRed,
@@ -171,13 +153,13 @@ fun GameScreen(
     }
 }
 
-// --- 💎 المكونات المصغرة ---
+// --- 💎 المكونات ---
 @Composable
 fun StatItemXml(iconRes: Int, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(painter = painterResource(id = iconRes), contentDescription = null, tint = color, modifier = Modifier.size(32.dp))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = value, color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(painter = painterResource(id = iconRes), contentDescription = null, tint = color, modifier = Modifier.size(36.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = value, color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -188,31 +170,72 @@ fun HelpButton(icon: String, text: String, color: Color, onClick: () -> Unit) {
     }
 }
 
+// --- الكيبورد المزدوج الجديد كلياً ---
 @Composable
-fun NeonKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
-    val rows = listOf(
-        listOf('أ', 'ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ'),
-        listOf('د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض'),
-        listOf('ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل'),
-        listOf('م', 'ن', 'ه', 'و', 'ي', 'ى', 'ئ', 'ة')
+fun NeonDualKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
+    var isNumeric by remember { mutableStateOf(false) }
+
+    // الترتيب المعكوس برمجياً ليظهر على الشاشة العربية تماماً مثل صورتك المرفقة
+    val letterRows = listOf(
+        listOf('ج', 'ح', 'خ', 'ه', 'ع', 'غ', 'ف', 'ق', 'ص'),
+        listOf('ض', 'ك', 'م', 'ن', 'ت', 'ا', 'ل', 'ب', 'ي'),
+        listOf('س', 'ش', 'ء', 'ث', 'ة', 'و', 'ر', 'ز', 'د'),
+        listOf('ذ', 'ط', 'ظ', 'ى', 'ئ', 'ؤ', 'إ', 'أ', 'آ') 
     )
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        rows.forEach { row ->
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+
+
+    val numberRows = listOf(
+        listOf('3', '2', '1'),
+        listOf('6', '5', '4'),
+        listOf('9', '8', '7'),
+        listOf('0')
+    )
+
+    val activeRows = if (isNumeric) numberRows else letterRows
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        activeRows.forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 row.forEach { char ->
-                    Box(modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(GlassWhite).clickable { onLetterClick(char) }, contentAlignment = Alignment.Center) {
-                        Text(text = char.toString(), color = TextSilver, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Box(modifier = Modifier.weight(1f).aspectRatio(if (isNumeric) 2f else 1f).clip(RoundedCornerShape(8.dp)).background(GlassWhite).clickable { onLetterClick(char) }, contentAlignment = Alignment.Center) {
+                        Text(text = char.toString(), color = TextSilver, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = { onLetterClick(' ') }, colors = ButtonDefaults.buttonColors(containerColor = NeonCyan.copy(alpha = 0.2f)), shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(2f).height(55.dp)) {
+        
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            
+            // زر الأرقام في أقصى اليمين (في النظام العربي يُكتب الكود أولاً ليظهر يميناً)
+            Button(
+                onClick = { isNumeric = !isNumeric },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.weight(1f).height(55.dp)
+            ) {
+                Text(if (isNumeric) "أبج" else "123", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+
+            // زر المسافة في الوسط
+            Button(
+                onClick = { onLetterClick(' ') },
+                colors = ButtonDefaults.buttonColors(containerColor = NeonCyan.copy(alpha = 0.2f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.weight(2f).height(55.dp)
+            ) {
                 Text("مسافة", color = NeonCyan, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
-            Button(onClick = onDeleteClick, colors = ButtonDefaults.buttonColors(containerColor = CrimsonRed.copy(alpha = 0.2f)), shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1.5f).height(55.dp)) {
-                Text("⌫ مسح", color = CrimsonRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+            // زر المسح في أقصى اليسار
+            Button(
+                onClick = onDeleteClick,
+                colors = ButtonDefaults.buttonColors(containerColor = CrimsonRed.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.weight(1f).height(55.dp)
+            ) {
+                Text("⌫", color = CrimsonRed, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
+
