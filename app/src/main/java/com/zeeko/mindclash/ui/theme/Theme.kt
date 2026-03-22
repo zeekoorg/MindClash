@@ -9,12 +9,15 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = NeonBlue,
-    secondary = NeonPink,
-    tertiary = NeonPurple,
-    background = DarkBackground,
-    surface = DarkSurface,
+// نستخدم فقط الألوان الفاخرة التي عرفناها
+private val LuxuryDarkColorScheme = darkColorScheme(
+    background = ObsidianBlack,
+    surface = MidnightBlue,
+    primary = LiquidGold,
+    secondary = NeonCyan,
+    error = CrimsonRed,
+    onBackground = TextSilver,
+    onSurface = TextSilver
 )
 
 @Composable
@@ -23,10 +26,15 @@ fun MindClashTheme(content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = DarkBackground.toArgb()
-            window.navigationBarColor = DarkBackground.toArgb()
+            // جعل شريط الحالة (العلوي) وشريط الأزرار (السفلي) مندمجاً مع خلفية اللعبة
+            window.statusBarColor = ObsidianBlack.toArgb()
+            window.navigationBarColor = ObsidianBlack.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
-    MaterialTheme(colorScheme = DarkColorScheme, content = content)
+
+    MaterialTheme(
+        colorScheme = LuxuryDarkColorScheme,
+        content = content
+    )
 }
