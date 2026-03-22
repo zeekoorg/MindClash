@@ -69,22 +69,25 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    // التحقق من الإجابة
+    // التحقق من الإجابة (تم تحديثه ليتوافق مع صرامة الكوتلن)
     private fun checkAnswer(userAnswer: String) {
         timerJob?.cancel() // إيقاف العداد
         val currentState = _state.value
-        val correctAnswer = currentState.currentQuestion?.answer ?: return
+        
+        // 🚀 أخذنا نسخة محلية وآمنة من السؤال الحالي لتجنب خطأ Smart cast
+        val currentQuestion = currentState.currentQuestion ?: return
+        val correctAnswer = currentQuestion.answer
 
         if (userAnswer == correctAnswer) {
             // إجابة صحيحة
-            val earnedPoints = currentState.currentQuestion.points
+            val earnedPoints = currentQuestion.points
             _state.update { 
                 it.copy(
                     score = it.score + earnedPoints,
                     showCorrectAnimation = true 
                 ) 
             }
-            // ننتظر قليلاً ليرى اللاعب الأنميشن ثم ننتقل
+            // ننتظر قليلاً ليرى اللاعب الأنميشن ثم ننتقل للسؤال التالي
             viewModelScope.launch {
                 delay(800)
                 _state.update { it.copy(showCorrectAnimation = false) }
