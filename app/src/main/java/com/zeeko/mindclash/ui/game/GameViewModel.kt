@@ -3,6 +3,7 @@ package com.zeeko.mindclash.ui.game
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zeeko.mindclash.repository.GameRepository
+import com.zeeko.mindclash.repository.UserProgressRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GameViewModel @Inject constructor(
-    private val repository: GameRepository
+    private val repository: GameRepository,
+    private val progressRepository: UserProgressRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GameUiState())
@@ -38,7 +40,8 @@ class GameViewModel @Inject constructor(
                     currentQuestionIndex = 0,
                     userAnswer = "",
                     isGameOver = it.lives <= 0,
-                    isLevelComplete = false
+                    isLevelComplete = false,
+                    score = 0 // تصفير النقاط عند بدء مستوى جديد
                 )
             }
             startTimer()
@@ -69,12 +72,12 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    // التحقق من الإجابة (تم تحديثه ليتوافق مع صرامة الكوتلن)
+    // التحقق من الإجابة
     private fun checkAnswer(userAnswer: String) {
         timerJob?.cancel() // إيقاف العداد
         val currentState = _state.value
         
-        // 🚀 أخذنا نسخة محلية وآمنة من السؤال الحالي لتجنب خطأ Smart cast
+        // أخذنا نسخة محلية وآمنة من السؤال لتجنب خطأ Smart cast
         val currentQuestion = currentState.currentQuestion ?: return
         val correctAnswer = currentQuestion.answer
 
@@ -87,7 +90,7 @@ class GameViewModel @Inject constructor(
                     showCorrectAnimation = true 
                 ) 
             }
-            // ننتظر قليلاً ليرى اللاعب الأنميشن ثم ننتقل للسؤال التالي
+            // ننتظر الأنميشن ثم ننتقل للسؤال التالي
             viewModelScope.launch {
                 delay(800)
                 _state.update { it.copy(showCorrectAnimation = false) }
@@ -103,7 +106,6 @@ class GameViewModel @Inject constructor(
                     isGameOver = newLives <= 0
                 ) 
             }
-            // إعادة تعيين الإجابة وتشغيل العداد مرة أخرى إذا لم تنته اللعبة
             viewModelScope.launch {
                 delay(500)
                 _state.update { it.copy(showWrongAnimation = false, userAnswer = "") }
@@ -124,7 +126,8 @@ class GameViewModel @Inject constructor(
             }
             startTimer()
         } else {
-            // اكتمل المستوى
+            // 🚀 اكتمل المستوى! افتح المستوى التالي في الخريطة
+            progressRepository.unlockNextLevel(currentState.currentLevel)
             _state.update { it.copy(isLevelComplete = true) }
         }
     }
@@ -141,10 +144,10 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    // نظام العداد الدقيق (Coroutines)
+    // نظام العداد الدقيق
     private fun startTimer() {
         timerJob?.cancel()
-        _state.update { it.copy(timeLeft = 60) } // إعادة العداد لـ 60
+        _state.update { it.copy(timeLeft = 60) }
         
         timerJob = viewModelScope.launch {
             while (true) {
@@ -153,7 +156,6 @@ class GameViewModel @Inject constructor(
                 if (currentLeft > 0) {
                     _state.update { it.copy(timeLeft = currentLeft - 1) }
                 } else {
-                    // انتهى الوقت = خسارة محاولة
                     handleTimeout()
                     break
                 }
@@ -167,17 +169,18 @@ class GameViewModel @Inject constructor(
             it.copy(
                 lives = newLives,
                 isGameOver = newLives <= 0,
-                userAnswer = "" // مسح الإجابة
+                userAnswer = ""
             )
         }
-        if (newLives > 0) startTimer() // إعادة تشغيل العداد للسؤال نفسه
+        if (newLives > 0) startTimer()
     }
 
     // إعادة ضبط اللعبة (عند الخسارة)
     fun resetGame() {
         _state.update { 
-            GameUiState(score = 0, lives = 3) // تصفير كل شيء وبدء اللعبة
+            GameUiState(score = 0, lives = 3) 
         }
-        loadLevel(1)
+        loadLevel(_state.value.currentLevel)
     }
 }
+
