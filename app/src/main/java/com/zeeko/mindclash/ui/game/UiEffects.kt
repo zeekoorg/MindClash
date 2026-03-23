@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zeeko.mindclash.ui.theme.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun NeoCorrectOverlay() {
