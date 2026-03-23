@@ -844,7 +844,7 @@ fun CosmicRewardDialog(
                 if (type == "hint") "✨ شاهد إعلاناً لتحصل على تلميح مجاني ✨"
                 else "🔮 شاهد إعلاناً لتحصل على حرف مجاني 🔮",
                 fontSize = 18.sp,
-                color = TextMystic,
+                color = TextSilver,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(32.dp))
