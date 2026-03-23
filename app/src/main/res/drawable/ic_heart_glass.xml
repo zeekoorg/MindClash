@@ -4,59 +4,49 @@
     android:viewportWidth="48"
     android:viewportHeight="48">
     
-    <!-- طبقة الزجاج المتألق -->
     <path
         android:fillColor="#33FFFFFF"
         android:pathData="M15,5h18c5.5,0 10,4.5 10,10v18c0,5.5 -4.5,10 -10,10h-18c-5.5,0 -10,-4.5 -10,-10v-18c0,-5.5 4.5,-10 10,-10z"/>
     
-    <!-- إطار نيون متوهج -->
     <path
         android:strokeWidth="2.5"
         android:strokeColor="#FFFF2A55"
         android:pathData="M15,6h18c4.9,0 9,4.1 9,9v18c0,4.9 -4.1,9 -9,9h-18c-4.9,0 -9,-4.1 -9,-9v-18c0,-4.9 4.1,-9 9,-9z"/>
     
-    <!-- القلب الرئيسي -->
     <path
         android:fillColor="#FFFF2A55"
         android:pathData="M24,37.35l-1.45,-1.32C17.4,31.36 14,28.28 14,24.5c0,-3.08 2.42,-5.5 5.5,-5.5c1.74,0 3.41,0.81 4.5,2.09C25.09,19.81 26.76,19 28.5,19 31.58,19 34,21.42 34,24.5c0,3.78 -3.4,6.86 -8.55,11.54L24,37.35z"/>
     
-    <!-- طبقة التوهج الداخلي -->
     <path
         android:fillColor="#88FF6B6B"
         android:pathData="M24,35l-1.2,-1.1C18.5,29.8 15.5,27 15.5,23.8c0,-2.5 1.9,-4.5 4.3,-4.5c1.4,0 2.7,0.7 3.5,1.7c0.8,-1 2.1,-1.7 3.5,-1.7c2.4,0 4.3,2 4.3,4.5c0,3.2 -3,6 -7.3,10.1L24,35z"/>
     
-    <!-- طبقة النبض الخارجي -->
     <path
         android:strokeWidth="1.8"
         android:strokeColor="#FFFF6B6B"
         android:strokeAlpha="0.6"
         android:pathData="M24,21 C29,21 33,25 33,30 C33,35 29,39 24,39 C19,39 15,35 15,30 C15,25 19,21 24,21z"/>
     
-    <!-- نقاط الضوء السحرية -->
     <path
         android:fillColor="#FFFFFF"
         android:fillAlpha="0.9"
         android:pathData="M20,22 L22,22 L21,23.5 Z"/>
+    
     <path
         android:fillColor="#FFFFFF"
         android:fillAlpha="0.9"
         android:pathData="M28,22 L30,22 L29,23.5 Z"/>
     
-    <!-- شرارات الحب -->
     <path
         android:fillColor="#FFFF6B6B"
         android:fillAlpha="0.7"
         android:pathData="M17,27 L18.5,27 L17.75,28.5 Z"/>
+    
     <path
         android:fillColor="#FFFF6B6B"
         android:fillAlpha="0.7"
         android:pathData="M31,27 L32.5,27 L31.75,28.5 Z"/>
-    <path
-        android:fillColor="#FFFF6B6B"
-        android:fillAlpha="0.7"
-        android:pathData="M24,15 L25.5,15 L24.75,16.5 Z"/>
     
-    <!-- بريق كريستالي -->
     <path
         android:fillColor="#44FFFFFF"
         android:pathData="M24,28 L26,26 L24,24 L22,26 L24,28z"/>
