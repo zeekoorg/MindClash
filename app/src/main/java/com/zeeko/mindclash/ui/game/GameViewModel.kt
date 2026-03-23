@@ -17,7 +17,7 @@ import javax.inject.Inject
 data class GameUiState(
     val isLoading: Boolean = true,
     val currentLevel: Int = 1,
-    val score: Int = 0,
+    val score: Int = 0, // أصبحت تعبر عن العملات الذهبية الكلية
     val lives: Int = 3,
     val questions: List<QuestionEntity> = emptyList(),
     val currentQuestionIndex: Int = 0,
@@ -28,8 +28,7 @@ data class GameUiState(
     val showWrongAnimation: Boolean = false,
     val isHintVisible: Boolean = false
 ) {
-    val currentQuestion: QuestionEntity?
-        get() = questions.getOrNull(currentQuestionIndex)
+    val currentQuestion: QuestionEntity? get() = questions.getOrNull(currentQuestionIndex)
 }
 
 @HiltViewModel
@@ -46,22 +45,21 @@ class GameViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, currentLevel = level) }
             val levelQuestions = repository.getQuestionsForLevel(level)
             val savedData = progressRepository.getSavedGameState(level)
+            val globalCoins = progressRepository.getTotalCoins() // جلب رصيد البنك
 
             if (savedData != null) {
                 _state.update {
                     it.copy(
-                        isLoading = false, questions = levelQuestions,
-                        currentQuestionIndex = savedData.questionIndex, score = savedData.score,
-                        lives = savedData.lives, userAnswer = savedData.currentAnswer,
-                        isHintVisible = savedData.isHintVisible, isGameOver = savedData.lives <= 0,
-                        isLevelComplete = false
+                        isLoading = false, questions = levelQuestions, currentQuestionIndex = savedData.questionIndex,
+                        score = globalCoins, lives = savedData.lives, userAnswer = savedData.currentAnswer,
+                        isHintVisible = savedData.isHintVisible, isGameOver = savedData.lives <= 0, isLevelComplete = false
                     )
                 }
             } else {
                 _state.update {
                     it.copy(
                         isLoading = false, questions = levelQuestions, currentQuestionIndex = 0,
-                        score = 0, lives = 3, userAnswer = "", isHintVisible = false,
+                        score = globalCoins, lives = 3, userAnswer = "", isHintVisible = false,
                         isGameOver = false, isLevelComplete = false
                     )
                 }
@@ -73,9 +71,39 @@ class GameViewModel @Inject constructor(
         val currentState = _state.value
         progressRepository.saveGameState(
             level = currentState.currentLevel, questionIndex = currentState.currentQuestionIndex,
-            score = currentState.score, lives = currentState.lives, currentAnswer = currentState.userAnswer,
-            isHintVisible = currentState.isHintVisible
+            lives = currentState.lives, currentAnswer = currentState.userAnswer, isHintVisible = currentState.isHintVisible
         )
+    }
+
+    // --- 🛒 دوال شراء المساعدات بالعملات ---
+    fun buyHint() {
+        if (progressRepository.spendCoins(50)) {
+            _state.update { it.copy(score = progressRepository.getTotalCoins(), isHintVisible = true) }
+            persistCurrentState()
+        }
+    }
+
+    fun buyRevealLetter() {
+        val answer = _state.value.currentQuestion?.answer ?: return
+        if (_state.value.userAnswer.length < answer.length) {
+            if (progressRepository.spendCoins(50)) {
+                _state.update { it.copy(score = progressRepository.getTotalCoins()) }
+                onLetterClick(answer[_state.value.userAnswer.length]) // نرسل الحرف الصحيح
+            }
+        }
+    }
+
+    // في حال مشاهدة الإعلان بنجاح يتم الكشف مجاناً
+    fun showPermanentHint() {
+        _state.update { it.copy(isHintVisible = true) }
+        persistCurrentState()
+    }
+
+    fun revealLetterFree() {
+        val answer = _state.value.currentQuestion?.answer ?: return
+        if (_state.value.userAnswer.length < answer.length) {
+            onLetterClick(answer[_state.value.userAnswer.length])
+        }
     }
 
     fun onLetterClick(char: Char) {
@@ -101,26 +129,14 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    fun showPermanentHint() {
-        _state.update { it.copy(isHintVisible = true) }
-        persistCurrentState()
-    }
-
-    fun revealLetter() {
-        val currentState = _state.value
-        val answer = currentState.currentQuestion?.answer ?: return
-        if (currentState.userAnswer.length < answer.length) {
-            onLetterClick(answer[currentState.userAnswer.length])
-        }
-    }
-
     private fun checkAnswer(userAnswer: String) {
         val currentState = _state.value
         val currentQuestion = currentState.currentQuestion ?: return
 
         if (userAnswer == currentQuestion.answer) {
-            val earnedPoints = currentQuestion.points
-            _state.update { it.copy(score = it.score + earnedPoints, showCorrectAnimation = true) }
+            // إجابة صحيحة = زيادة في البنك
+            progressRepository.addCoins(currentQuestion.points)
+            _state.update { it.copy(score = progressRepository.getTotalCoins(), showCorrectAnimation = true) }
             viewModelScope.launch {
                 delay(800)
                 _state.update { it.copy(showCorrectAnimation = false) }
@@ -129,9 +145,7 @@ class GameViewModel @Inject constructor(
         } else {
             val newLives = currentState.lives - 1
             _state.update { it.copy(lives = newLives, showWrongAnimation = true, isGameOver = newLives <= 0) }
-            
             if (newLives <= 0) progressRepository.clearGameState() else persistCurrentState()
-
             viewModelScope.launch {
                 delay(500)
                 _state.update { it.copy(showWrongAnimation = false, userAnswer = "") }
