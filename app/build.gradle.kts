@@ -62,11 +62,7 @@ dependencies {
     
     // ✨ تأثيرات 3D وحركية متطورة
     implementation("androidx.compose.ui:ui-util:1.6.8")
-    implementation("com.github.skydoves:transformation-layout:1.1.0")
-    implementation("com.github.kbiakov:CodeView-Android:1.3.2")
     
-    // 🎨 تأثيرات نيون ووهاجة
-    implementation("com.github.mohammadatif:Animatoo:1.0.1")
     
     // 🌟 تأثيرات Glassmorphism متطورة
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.35.0-alpha")
