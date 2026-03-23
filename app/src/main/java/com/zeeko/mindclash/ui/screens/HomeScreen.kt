@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -42,13 +43,11 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
     
     var unlockedLevel by remember { mutableIntStateOf(progressRepo.getUnlockedLevel()) }
     val totalLevels = 50
-    var rotationAngle by remember { mutableStateOf(0f) }
     var starScale by remember { mutableStateOf(1f) }
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
-    // تأثيرات متحركة
     LaunchedEffect(Unit) {
         unlockedLevel = progressRepo.getUnlockedLevel()
         val targetIndex = totalLevels - unlockedLevel
@@ -58,7 +57,6 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
             }
         }
         while (true) {
-            rotationAngle = (rotationAngle + 1f) % 360f
             starScale = 1f + (kotlin.math.sin(System.currentTimeMillis() / 500.0).toFloat() * 0.1f)
             delay(50)
         }
@@ -69,19 +67,6 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
             .fillMaxSize()
             .background(cosmicGradient())
     ) {
-        // طبقة النجوم المتألقة
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            repeat(150) { i ->
-                val x = (i * 131) % size.width
-                val y = (i * 253) % size.height
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.3f + (kotlin.math.sin(rotationAngle + i).toFloat() * 0.2f)),
-                    radius = 2f + (i % 3).toFloat(),
-                    center = Offset(x, y)
-                )
-            }
-        }
-
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -113,7 +98,7 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
                 )
             }
 
-            // مسار المستويات المتعرج
+            // مسار المستويات
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -136,11 +121,10 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
                             .padding(horizontal = 16.dp),
                         contentAlignment = alignment
                     ) {
-                        CosmicLevelNode(
+                        LevelNode(
                             levelNumber = levelNum,
                             isUnlocked = isUnlocked,
                             isCurrent = isCurrent,
-                            index = index,
                             onClick = { if (isUnlocked) onNavigateToGame(levelNum) }
                         )
                     }
@@ -151,15 +135,13 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
 }
 
 @Composable
-fun CosmicLevelNode(
+fun LevelNode(
     levelNumber: Int,
     isUnlocked: Boolean,
     isCurrent: Boolean,
-    index: Int,
     onClick: () -> Unit
 ) {
     var pulseScale by remember { mutableStateOf(1f) }
-    var glowAlpha by remember { mutableStateOf(0.3f) }
     var rotation by remember { mutableStateOf(0f) }
     
     val infiniteTransition = rememberInfiniteTransition()
@@ -168,15 +150,6 @@ fun CosmicLevelNode(
         targetValue = if (isCurrent) 1.15f else 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    ).value
-    
-    glowAlpha = infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         )
     ).value
@@ -210,17 +183,7 @@ fun CosmicLevelNode(
                     color = if (isUnlocked) NeonCyan else Color.Gray,
                     shape = CircleShape
                 )
-                .clickable(enabled = isUnlocked) { onClick() }
-                .drawWithContent {
-                    drawContent()
-                    if (isCurrent) {
-                        drawCircle(
-                            color = NeonCyan.copy(alpha = glowAlpha),
-                            radius = size.minDimension * 0.6f,
-                            blendMode = BlendMode.Screen
-                        )
-                    }
-                },
+                .clickable(enabled = isUnlocked) { onClick() },
             contentAlignment = Alignment.Center
         ) {
             when {
