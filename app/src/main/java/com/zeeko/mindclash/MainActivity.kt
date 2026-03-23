@@ -16,7 +16,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     
-    // حقن مدير الإعلانات
     @Inject lateinit var adManager: AdManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,7 +26,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // تشغيل نظام التنقل وتمرير الإعلانات
                     MindClashNavGraph(adManager = adManager)
                 }
             }
