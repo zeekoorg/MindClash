@@ -1,81 +1,70 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="48"
-    android:viewportHeight="48">
+    android:viewportHeight="48"
+    tools:ignore="VectorPath">
     
-    <!-- طبقة الزجاج المتدرج (تأثير كريستال) -->
+    <!-- طبقة الزجاج المتدرج (باستخدام مسارين للتأثير) -->
     <path
         android:fillColor="#33FFFFFF"
-        android:pathData="M15,5h18c5.5,0 10,4.5 10,10v18c0,5.5 -4.5,10 -10,10h-18c-5.5,0 -10,-4.5 -10,-10v-18c0,-5.5 4.5,-10 10,-10z">
-        <aapt:attr name="android:fillColor">
-            <gradient 
-                android:startX="15" android:startY="5"
-                android:endX="33" android:endY="43"
-                android:type="linear">
-                <item android:offset="0" android:color="#33FFFFFF"/>
-                <item android:offset="0.5" android:color="#66FFFFFF"/>
-                <item android:offset="1" android:color="#33FFFFFF"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:pathData="M15,5h18c5.5,0 10,4.5 10,10v18c0,5.5 -4.5,10 -10,10h-18c-5.5,0 -10,-4.5 -10,-10v-18c0,-5.5 4.5,-10 10,-10z"/>
     
-    <!-- إطار نيون متوهج (تأثير نبض) -->
+    <!-- إطار نيون متوهج -->
     <path
         android:strokeWidth="2.5"
         android:strokeColor="#FFFF2A55"
         android:pathData="M15,6h18c4.9,0 9,4.1 9,9v18c0,4.9 -4.1,9 -9,9h-18c-4.9,0 -9,-4.1 -9,-9v-18c0,-4.9 4.1,-9 9,-9z"/>
     
-    <!-- القلب الرئيسي مع توهج داخلي -->
+    <!-- القلب الرئيسي بتأثير التدرج (محاكاة باستخدام طبقات متعددة) -->
     <path
         android:fillColor="#FFFF2A55"
-        android:pathData="M24,37.35l-1.45,-1.32C17.4,31.36 14,28.28 14,24.5c0,-3.08 2.42,-5.5 5.5,-5.5c1.74,0 3.41,0.81 4.5,2.09C25.09,19.81 26.76,19 28.5,19 31.58,19 34,21.42 34,24.5c0,3.78 -3.4,6.86 -8.55,11.54L24,37.35z">
-        <aapt:attr name="android:fillColor">
-            <gradient 
-                android:startX="14" android:startY="19"
-                android:endX="34" android:endY="37"
-                android:type="linear">
-                <item android:offset="0" android:color="#FFFF6B6B"/>
-                <item android:offset="0.5" android:color="#FFFF2A55"/>
-                <item android:offset="1" android:color="#FFCC1F40"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:pathData="M24,37.35l-1.45,-1.32C17.4,31.36 14,28.28 14,24.5c0,-3.08 2.42,-5.5 5.5,-5.5c1.74,0 3.41,0.81 4.5,2.09C25.09,19.81 26.76,19 28.5,19 31.58,19 34,21.42 34,24.5c0,3.78 -3.4,6.86 -8.55,11.54L24,37.35z"/>
     
-    <!-- طبقة توهج خارجي (القلب النابض) -->
+    <!-- طبقة توهج داخلي محاكي للتدرج -->
     <path
-        android:fillColor="#44FF2A55"
-        android:pathData="M24,35l-1.2,-1.1C18.5,29.8 15.5,27 15.5,23.8c0,-2.5 1.9,-4.5 4.3,-4.5c1.4,0 2.7,0.7 3.5,1.7c0.8,-1 2.1,-1.7 3.5,-1.7c2.4,0 4.3,2 4.3,4.5c0,3.2 -3,6 -7.3,10.1L24,35z"/>
+        android:fillColor="#CCFF6B6B"
+        android:pathData="M24,34.5l-1.2,-1.1C18.5,29.3 15.5,26.5 15.5,23.3c0,-2.2 1.7,-4 3.8,-4c1.2,0 2.3,0.6 3,1.5c0.7,-0.9 1.8,-1.5 3,-1.5c2.1,0 3.8,1.8 3.8,4c0,2.8 -2.6,5.3 -6.3,8.9L24,34.5z"/>
     
-    <!-- نقطة ضوء سحرية (انعكاس) -->
+    <!-- طبقة توهج خارجي -->
+    <path
+        android:fillColor="#88FF2A55"
+        android:pathData="M24,32l-1,-0.9c-3.4,-3.1 -5.8,-5.5 -5.8,-8.1c0,-1.6 1.3,-2.9 2.9,-2.9c0.9,0 1.7,0.4 2.2,1.1c0.5,-0.7 1.3,-1.1 2.2,-1.1c1.6,0 2.9,1.3 2.9,2.9c0,2.6 -2.4,5 -5.8,8.1L24,32z"/>
+    
+    <!-- نقاط ضوء سحرية متوهجة -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.8"
+        android:fillAlpha="0.9"
         android:pathData="M20,22 L22,22 L21,24 Z"/>
-    
-    <!-- نقطة ضوء ثانية -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.8"
+        android:fillAlpha="0.9"
         android:pathData="M28,22 L30,22 L29,24 Z"/>
     
-    <!-- تأثير شرارات نيون -->
+    <!-- شرارات نيون متطايرة -->
     <path
         android:fillColor="#FFFF6B6B"
-        android:fillAlpha="0.6"
-        android:pathData="M17,28 L18,28 L17.5,29 Z"/>
+        android:fillAlpha="0.7"
+        android:pathData="M17,27 L18,27 L17.5,28.5 Z"/>
     <path
         android:fillColor="#FFFF6B6B"
-        android:fillAlpha="0.6"
-        android:pathData="M31,28 L32,28 L31.5,29 Z"/>
+        android:fillAlpha="0.7"
+        android:pathData="M31,27 L32,27 L31.5,28.5 Z"/>
     <path
         android:fillColor="#FFFF6B6B"
-        android:fillAlpha="0.6"
-        android:pathData="M24,16 L25,16 L24.5,17 Z"/>
+        android:fillAlpha="0.7"
+        android:pathData="M24,15 L25,15 L24.5,16.5 Z"/>
+    
+    <!-- تأثير نبض خارجي -->
+    <path
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFF6B6B"
+        android:strokeAlpha="0.5"
+        android:pathData="M24,20 C30,20 34,24 34,30 C34,36 30,40 24,40 C18,40 14,36 14,30 C14,24 18,20 24,20z"/>
     
     <!-- طبقة بريق خفيفة -->
     <path
-        android:fillColor="#55FFFFFF"
-        android:fillAlpha="0.3"
-        android:pathData="M24,32 L24,32 C26,32 28,30 28,28 C28,26 26,24 24,24 C22,24 20,26 20,28 C20,30 22,32 24,32z"/>
+        android:fillColor="#33FFFFFF"
+        android:pathData="M24,28 C26,28 28,26 28,24 C28,22 26,20 24,20 C22,20 20,22 20,24 C20,26 22,28 24,28z"/>
 </vector>
