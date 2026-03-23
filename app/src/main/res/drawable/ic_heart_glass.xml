@@ -9,7 +9,7 @@
         android:fillColor="#33FFFFFF"
         android:pathData="M15,5h18c5.5,0 10,4.5 10,10v18c0,5.5 -4.5,10 -10,10h-18c-5.5,0 -10,-4.5 -10,-10v-18c0,-5.5 4.5,-10 10,-10z"/>
     
-    <!-- إطار نيون ثلاثي الأبعاد -->
+    <!-- إطار نيون متوهج -->
     <path
         android:strokeWidth="2.5"
         android:strokeColor="#FFFF2A55"
@@ -27,7 +27,7 @@
     
     <!-- طبقة النبض الخارجي -->
     <path
-        android:strokeWidth="1.5"
+        android:strokeWidth="1.8"
         android:strokeColor="#FFFF6B6B"
         android:strokeAlpha="0.6"
         android:pathData="M24,21 C29,21 33,25 33,30 C33,35 29,39 24,39 C19,39 15,35 15,30 C15,25 19,21 24,21z"/>
