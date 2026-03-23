@@ -60,19 +60,36 @@ fun GameScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- 🌟 الإحصائيات (النجوم والقلوب فقط) ---
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatItemXml(R.drawable.ic_star, state.score.toString(), LiquidGold)
-                StatItemXml(R.drawable.ic_heart, state.lives.toString(), CrimsonRed)
+            // --- 🌟 الجزء العلوي: الإحصائيات ولوجو اللعبة الكوني ---
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
+                
+                // لوجو صراع العقول في الوسط (ذهبي مزخرف بدون خلفية)
+                Text(
+                    text = "صراع العقول",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black,
+                    color = LiquidGold,
+                    textAlign = TextAlign.Center,
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(color = LiquidGold, blurRadius = 20f)
+                    ),
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
+
+                // الإحصائيات (يسار ويمين)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    StatItemGlassXml(R.drawable.ic_heart_glass, state.lives.toString(), CrimsonRed)
+                    StatItemGlassXml(R.drawable.ic_star_glass, state.score.toString(), LiquidGold)
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- 💡 التلميح الدائم ---
+            // --- 💡 التلميح الدائم (Glass Hint) ---
             AnimatedVisibility(visible = state.isHintVisible, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 Box(modifier = Modifier.fillMaxWidth().padding(bottom = 15.dp).clip(RoundedCornerShape(15.dp)).background(LiquidGold.copy(alpha = 0.15f)).border(1.dp, LiquidGold, RoundedCornerShape(15.dp)).padding(15.dp), contentAlignment = Alignment.Center) {
                     Text(text = "💡 تلميح: ${state.currentQuestion?.hint ?: ""}", color = LiquidGold, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
@@ -90,7 +107,10 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(30.dp))
 
             // --- 🔠 مربعات الإجابة النيون ---
-            val borderColor by animateColorAsState(targetValue = when { state.showCorrectAnimation -> EmeraldGreen; state.showWrongAnimation -> CrimsonRed; else -> NeonCyan }, animationSpec = tween(300), label = "")
+            val borderColor by animateColorAsState(
+                targetValue = when { state.showCorrectAnimation -> EmeraldGreen; state.showWrongAnimation -> CrimsonRed; else -> NeonCyan },
+                animationSpec = tween(300), label = "AnswerBorderColor"
+            )
             
             Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Center) {
                 val answerLength = state.currentQuestion?.answer?.length ?: 0
@@ -104,22 +124,22 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // --- 🆘 أزرار المساعدة ---
+            // --- 🆘 أزرار المساعدة وربط الإعلانات الذكي ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 HelpButton(icon = "💡", text = "كشف التلميح", color = LiquidGold) {
                     if (!state.isHintVisible) {
-                        adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.showPermanentHint() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
+                        adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.showPermanentHint() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، جرب بعد قليل", Toast.LENGTH_SHORT).show() })
                     }
                 }
                 HelpButton(icon = "🔍", text = "كشف حرف", color = NeonCyan) {
-                    adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.revealLetter() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
+                    adManager.showRewardedAd(activity = context, onRewardEarned = { viewModel.revealLetter() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، جرب بعد قليل", Toast.LENGTH_SHORT).show() })
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- ⌨️ الكيبورد المزدوج (حروف وأرقام) ---
-            NeonDualKeyboard(
+            // --- ⌨️ لوحة المفاتيح والاهتزاز اللمسي مع ترتيبك الجديد ---
+            NeonKeyboard(
                 onLetterClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     viewModel.onLetterClick(it)
@@ -131,10 +151,11 @@ fun GameScreen(
             )
         }
 
-        // --- الأنميشن والشاشات المنبثقة ---
+        // --- ✨ طبقات الأنميشن والمؤثرات ---
         AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlay() }
         AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlay() }
 
+        // --- 🏆 شاشة الفوز ---
         AnimatedVisibility(visible = state.isLevelComplete, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
             LegendaryResultOverlay(
                 title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ➡", buttonColor = NeonCyan,
@@ -143,6 +164,7 @@ fun GameScreen(
             )
         }
 
+        // --- 💀 شاشة الخسارة ---
         AnimatedVisibility(visible = state.isGameOver, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
             LegendaryResultOverlay(
                 title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "انتقام (إعادة) 🔄", buttonColor = CrimsonRed,
@@ -153,29 +175,44 @@ fun GameScreen(
     }
 }
 
-// --- 💎 المكونات ---
+// --- 💎 المكونات المصغرة ---
+
+// مكون الإحصائيات الزجاجي المضيء الجديد
 @Composable
-fun StatItemXml(iconRes: Int, value: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(painter = painterResource(id = iconRes), contentDescription = null, tint = color, modifier = Modifier.size(36.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = value, color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+fun StatItemGlassXml(iconRes: Int, value: String, color: Color) {
+    Box(
+        modifier = Modifier.size(height = 60.dp, width = 110.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.fillMaxSize()
+        )
+        Text(
+            text = value,
+            color = color,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(start = 10.dp) // لضمان التمركز مع الرمز
+        )
     }
 }
 
 @Composable
-fun HelpButton(icon: String, text: String, color: Color, onClick: () -> Unit) {
+fun HelpButton(icon = "💡", text: String, color: Color, onClick: () -> Unit) {
     Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = color.copy(alpha = 0.15f)), border = androidx.compose.foundation.BorderStroke(1.dp, color), shape = RoundedCornerShape(20.dp)) {
         Text(text = "$icon $text", color = color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
     }
 }
 
-// --- الكيبورد المزدوج الجديد كلياً ---
 @Composable
-fun NeonDualKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
+fun NeonKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
     var isNumeric by remember { mutableStateOf(false) }
 
-    // الترتيب المعكوس برمجياً ليظهر على الشاشة العربية تماماً مثل صورتك المرفقة
+    // الترتيب الأبجدي المزدوج الشامل (9 حروف في السطر)
     val letterRows = listOf(
         listOf('ج', 'ح', 'خ', 'ه', 'ع', 'غ', 'ف', 'ق', 'ص'),
         listOf('ض', 'ك', 'م', 'ن', 'ت', 'ا', 'ل', 'ب', 'ي'),
@@ -183,30 +220,31 @@ fun NeonDualKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
         listOf('ذ', 'ط', 'ظ', 'ى', 'ئ', 'ؤ', 'إ', 'أ', 'آ') 
     )
 
-
     val numberRows = listOf(
         listOf('3', '2', '1'),
         listOf('6', '5', '4'),
-        listOf('9', '8', '7'),
-        listOf('0')
+        listOf('9', '8', '7')
     )
 
     val activeRows = if (isNumeric) numberRows else letterRows
 
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        
+        // الأسطر الأساسية للكيبورد
         activeRows.forEach { row ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 row.forEach { char ->
-                    Box(modifier = Modifier.weight(1f).aspectRatio(if (isNumeric) 2f else 1f).clip(RoundedCornerShape(8.dp)).background(GlassWhite).clickable { onLetterClick(char) }, contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(GlassWhite).clickable { onLetterClick(char) }, contentAlignment = Alignment.Center) {
                         Text(text = char.toString(), color = TextSilver, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
-        
+
+        // --- تصحيح زر الـ 0 والترتيب السفلي (الأرقام، المسافة، المسح) ---
         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             
-            // زر الأرقام في أقصى اليمين (في النظام العربي يُكتب الكود أولاً ليظهر يميناً)
+            // 🚀 زر تبديل الأرقام في أقصى اليمين (يُكتب الكود أولاً ليظهر يميناً في النظام العربي)
             Button(
                 onClick = { isNumeric = !isNumeric },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray.copy(alpha = 0.3f)),
@@ -226,16 +264,30 @@ fun NeonDualKeyboard(onLetterClick: (Char) -> Unit, onDeleteClick: () -> Unit) {
                 Text("مسافة", color = NeonCyan, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
-            // زر المسح في أقصى اليسار
-            Button(
-                onClick = onDeleteClick,
-                colors = ButtonDefaults.buttonColors(containerColor = CrimsonRed.copy(alpha = 0.3f)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f).height(55.dp)
-            ) {
-                Text("⌫", color = CrimsonRed, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            // 🚀 زر المسح والـ 0 في أقصى اليسار (تبديل ذكي)
+            if (isNumeric) {
+                // إذا كنا في لوحة الأرقام، نظهر الـ 0 مربعاً والمسح بجانبه
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // زر 0 مربع
+                    Box(modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(GlassWhite).clickable { onLetterClick('0') }, contentAlignment = Alignment.Center) {
+                        Text(text = "0", color = TextSilver, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    }
+                    // زر المسح مربع
+                    Box(modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(CrimsonRed.copy(alpha = 0.2f)).clickable { onDeleteClick() }, contentAlignment = Alignment.Center) {
+                        Text(text = "⌫", color = CrimsonRed, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                // إذا كنا في لوحة الحروف، نظهر المسح مستطيلاً
+                Button(
+                    onClick = onDeleteClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = CrimsonRed.copy(alpha = 0.2f)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).height(55.dp)
+                ) {
+                    Text("⌫ مسح", color = CrimsonRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
 }
-
