@@ -14,7 +14,6 @@ fun MindClashNavGraph(adManager: AdManager) {
 
     NavHost(navController = navController, startDestination = "home") {
         
-        // الشاشة الرئيسية
         composable("home") {
             HomeScreen(
                 onNavigateToGame = { level ->
@@ -23,7 +22,6 @@ fun MindClashNavGraph(adManager: AdManager) {
             )
         }
 
-        // شاشة اللعب (مع تمرير رقم المستوى)
         composable(
             route = "game/{level}",
             arguments = listOf(navArgument("level") { type = NavType.IntType })
