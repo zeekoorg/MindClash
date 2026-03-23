@@ -15,73 +15,79 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.zeeko.mindclash.R
 import com.zeeko.mindclash.ads.AdManager
 import com.zeeko.mindclash.ui.game.GameViewModel
 import com.zeeko.mindclash.ui.theme.*
 import kotlinx.coroutines.delay
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-// 🌟 تأثيرات إضافية متطورة
+// ==================== تأثيرات خاصة متطورة ====================
+
 @Composable
-fun Modifier.animatedGlow(
-    glowColor: Color = Color.Cyan,
-    enabled: Boolean = true
-): Modifier = composed {
-    val infiniteTransition = rememberInfiniteTransition()
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
+fun Modifier.glowEffect(
+    color: Color = LiquidNeonCyan,
+    radius: Float = 0.5f,
+    alpha: Float = 0.5f
+): Modifier = this.drawWithContent {
+    drawContent()
+    drawCircle(
+        color = color.copy(alpha = alpha),
+        radius = size.minDimension * radius,
+        blendMode = BlendMode.Screen
     )
-    
-    if (enabled) {
-        this.drawWithContent {
-            drawContent()
-            drawCircle(
-                color = glowColor.copy(alpha = glowAlpha),
-                radius = size.minDimension * 0.5f,
-                blendMode = BlendMode.Screen
-            )
-        }
-    } else this
 }
 
 @Composable
 fun Modifier.rotate3D(
     pitch: Float = 0f,
-    yaw: Float = 0f
+    yaw: Float = 0f,
+    roll: Float = 0f
 ): Modifier {
-    val rotationX = pitch
-    val rotationY = yaw
-    
-    return graphicsLayer {
-        this.rotationX = rotationX
-        this.rotationY = rotationY
-        this.cameraDistance = 8 * density
+    return this.graphicsLayer {
+        rotationX = pitch
+        rotationY = yaw
+        rotationZ = roll
+        cameraDistance = 12f * density
     }
 }
 
+@Composable
+fun Modifier.particleEffect(
+    particleCount: Int = 50,
+    color: Color = LiquidNeonCyan
+): Modifier = this.drawWithContent {
+    drawContent()
+    repeat(particleCount) { index ->
+        val angle = (index * 360f / particleCount) + (System.currentTimeMillis() % 3600) / 10f
+        val radius = size.minDimension * 0.3f
+        val x = center.x + cos(Math.toRadians(angle.toDouble())).toFloat() * radius
+        val y = center.y + sin(Math.toRadians(angle.toDouble())).toFloat() * radius
+        drawCircle(
+            color = color.copy(alpha = 0.3f),
+            radius = 2f,
+            center = Offset(x, y)
+        )
+    }
+}
+
+// ==================== الشاشة الرئيسية ====================
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GameScreen(
     level: Int,
@@ -96,17 +102,12 @@ fun GameScreen(
     
     var showAdDialog by remember { mutableStateOf(false) }
     var adDialogType by remember { mutableStateOf("") }
-    var backgroundRotation by remember { mutableStateOf(0f) }
-    var particleOffset by remember { mutableStateOf(Offset.Zero) }
+    var rotationAngle by remember { mutableStateOf(0f) }
     
-    // تأثير دوران الخلفية المستمر
+    // تأثير دوران الخلفية
     LaunchedEffect(Unit) {
         while (true) {
-            backgroundRotation = (backgroundRotation + 0.5f) % 360f
-            particleOffset = Offset(
-                x = (particleOffset.x + 2f) % configuration.screenWidthDp,
-                y = (particleOffset.y + 1f) % configuration.screenHeightDp
-            )
+            rotationAngle = (rotationAngle + 0.3f) % 360f
             delay(50)
         }
     }
@@ -118,22 +119,31 @@ fun GameScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        Color(0xFF0A0F2A),
-                        Color(0xFF050714),
-                        Color(0xFF020208)
-                    ),
-                    radius = 1500f
-                )
-            )
+            .background(cosmicGradient())
     ) {
-        // 🌌 طبقة الجزيئات ثلاثية الأبعاد
-        Particle3DLayer(offset = particleOffset)
-        
-        // ✨ طبقة النيون المتوهجة
-        NeonWaveLayer(rotation = backgroundRotation)
+        // طبقة الموجات النيونية
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            for (i in 0..5) {
+                val angle = rotationAngle + (i * 60f)
+                val radius = 200f + i * 80f
+                drawArc(
+                    color = LiquidNeonCyan.copy(alpha = 0.1f),
+                    startAngle = angle,
+                    sweepAngle = 120f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+                )
+                drawArc(
+                    color = LiquidNeonMagenta.copy(alpha = 0.1f),
+                    startAngle = angle + 180,
+                    sweepAngle = 120f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+                )
+            }
+        }
         
         // المحتوى الرئيسي
         Column(
@@ -144,8 +154,8 @@ fun GameScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
             
-            // 👑 الرأسية الفاخرة
-            AnimatedHeaderSection(
+            // الهيدر المتطور
+            CosmicHeader(
                 lives = state.lives,
                 score = state.score,
                 level = level
@@ -153,31 +163,34 @@ fun GameScreen(
             
             Spacer(modifier = Modifier.height(30.dp))
             
-            // 💡 التلميح ثلاثي الأبعاد
+            // التلميح ثلاثي الأبعاد
             AnimatedVisibility(
                 visible = state.isHintVisible,
                 enter = slideInVertically(
                     initialOffsetY = { -it },
-                    animationSpec = spring(dampingRatio = 0.6f)
-                ) + fadeIn(),
-                exit = slideOutVertically() + fadeOut()
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) + fadeIn() + scaleIn(initialScale = 0.5f),
+                exit = slideOutVertically() + fadeOut() + scaleOut()
             ) {
-                GlassHint3D(hint = state.currentQuestion?.hint ?: "")
+                HolographicHint(hint = state.currentQuestion?.hint ?: "")
             }
             
             Spacer(modifier = Modifier.height(25.dp))
             
-            // 🃏 بطاقة السؤال بتأثير ثلاثي الأبعاد
-            QuestionCard3D(
-                question = state.currentQuestion?.question ?: "جاري التحميل...",
+            // بطاقة السؤال الكونية
+            CosmicQuestionCard(
+                question = state.currentQuestion?.question ?: "جاري تهيئة العقول...",
                 showCorrect = state.showCorrectAnimation,
                 showWrong = state.showWrongAnimation
             )
             
             Spacer(modifier = Modifier.height(40.dp))
             
-            // 🔠 مربعات الإجابة المتطورة
-            AnswerBoxes3D(
+            // مربعات الإجابة السحرية
+            MagicAnswerBoxes(
                 answerLength = state.currentQuestion?.answer?.length ?: 0,
                 userAnswer = state.userAnswer,
                 showCorrect = state.showCorrectAnimation,
@@ -186,24 +199,34 @@ fun GameScreen(
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // 🆘 أزرار المساعدة بتأثير نيون
-            HelpButtons3D(
+            // أزرار المساعدة الكونية
+            CosmicHelpButtons(
                 isHintVisible = state.isHintVisible,
                 score = state.score,
                 onBuyHint = {
-                    if (state.score >= 50) viewModel.buyHint()
-                    else { adDialogType = "hint"; showAdDialog = true }
+                    if (state.score >= 50) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.buyHint()
+                    } else {
+                        adDialogType = "hint"
+                        showAdDialog = true
+                    }
                 },
                 onBuyLetter = {
-                    if (state.score >= 50) viewModel.buyRevealLetter()
-                    else { adDialogType = "letter"; showAdDialog = true }
+                    if (state.score >= 50) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.buyRevealLetter()
+                    } else {
+                        adDialogType = "letter"
+                        showAdDialog = true
+                    }
                 }
             )
             
             Spacer(modifier = Modifier.height(20.dp))
             
-            // ⌨️ لوحة المفاتيح ثلاثية الأبعاد
-            NeonKeyboard3D(
+            // لوحة المفاتيح السحرية
+            MagicKeyboard(
                 onLetterClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     viewModel.onLetterClick(it)
@@ -213,11 +236,13 @@ fun GameScreen(
                     viewModel.onDeleteClick()
                 }
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
         
-        // 📺 نافذة الإعلان المتطورة
+        // نافذة الإعلان
         if (showAdDialog) {
-            AdDialog3D(
+            CosmicAdDialog(
                 type = adDialogType,
                 onDismiss = { showAdDialog = false },
                 onWatchAd = {
@@ -229,22 +254,22 @@ fun GameScreen(
                             else viewModel.revealLetterFree()
                         },
                         onAdFailed = {
-                            Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "الإعلان غير جاهز حالياً", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
             )
         }
         
-        // 🎉 شاشات النتائج السينمائية
+        // شاشات النتائج السينمائية
         if (state.showCorrectAnimation) {
-            CorrectAnimation3D()
+            CosmicSuccessAnimation()
         }
         if (state.showWrongAnimation) {
-            WrongAnimation3D()
+            CosmicFailureAnimation()
         }
         if (state.isLevelComplete) {
-            LevelCompleteCinematic(
+            CosmicVictoryCinematic(
                 level = state.currentLevel,
                 score = state.score,
                 onNext = {
@@ -260,7 +285,7 @@ fun GameScreen(
             )
         }
         if (state.isGameOver) {
-            GameOverCinematic(
+            CosmicDefeatCinematic(
                 level = state.currentLevel,
                 score = state.score,
                 onRestart = {
@@ -278,222 +303,219 @@ fun GameScreen(
     }
 }
 
-// 🌟 المكونات المتطورة
+// ==================== مكونات الهيدر الكوني ====================
 
 @Composable
-fun Particle3DLayer(offset: Offset) {
-    val particles = remember {
-        List(100) { index ->
-            Particle(
-                x = Random.nextInt(0, 1000) / 10f,
-                y = Random.nextInt(0, 2000) / 10f,
-                size = Random.nextInt(2, 6),
-                speed = Random.nextFloat() * 2 + 1,
-                color = Color.White.copy(alpha = Random.nextFloat() * 0.5f)
-            )
-        }
-    }
+fun CosmicHeader(lives: Int, score: Int, level: Int) {
+    var scale by remember { mutableStateOf(1f) }
+    var rotationY by remember { mutableStateOf(0f) }
     
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        particles.forEach { particle ->
-            val x = (particle.x + offset.x * particle.speed) % size.width
-            val y = (particle.y + offset.y * particle.speed) % size.height
-            
-            drawCircle(
-                color = particle.color,
-                radius = particle.size.toFloat(),
-                center = Offset(x, y)
-            )
-        }
-    }
-}
-
-@Composable
-fun NeonWaveLayer(rotation: Float) {
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val centerX = size.width / 2
-        val centerY = size.height / 2
-        
-        for (i in 0..5) {
-            val angle = rotation + (i * 60f)
-            val radius = 200f + i * 50f
-            
-            drawArc(
-                color = Color.Cyan.copy(alpha = 0.1f),
-                startAngle = angle,
-                sweepAngle = 90f,
-                useCenter = false,
-                topLeft = Offset(centerX - radius, centerY - radius),
-                size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
-            )
-        }
-    }
-}
-
-@Composable
-fun AnimatedHeaderSection(lives: Int, score: Int, level: Int) {
-    var rotation by remember { mutableStateOf(0f) }
-    
-    LaunchedEffect(Unit) {
-        while (true) {
-            rotation = (rotation + 2f) % 360f
-            delay(50)
-        }
+    LaunchedEffect(lives) {
+        scale = 1.1f
+        rotationY = 10f
+        delay(200)
+        scale = 1f
+        rotationY = 0f
     }
     
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(130.dp)
+            .scale(scale)
+            .rotate3D(yaw = rotationY)
+            .clip(RoundedCornerShape(32.dp))
+            .background(GlassCrystal)
+            .border(
+                width = 2.dp,
+                brush = neonWaveGradient(),
+                shape = RoundedCornerShape(32.dp)
+            )
+            .glowEffect(color = LiquidNeonGold, radius = 0.3f)
     ) {
-        // خلفية زجاجية متوهجة
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(30.dp))
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            Color(0x33FFFFFF),
-                            Color(0x11FFFFFF),
-                            Color(0x33FFFFFF)
-                        )
-                    )
-                )
-                .border(
-                    width = 1.dp,
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(Color.Cyan, Color.Magenta)
-                    ),
-                    shape = RoundedCornerShape(30.dp)
-                )
-        )
-        
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // القلوب المتطورة
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // القلوب المتوهجة
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 repeat(3) { index ->
                     val isActive = index < lives
+                    val pulseScale by animateFloatAsState(
+                        targetValue = if (isActive) 1f else 0.8f,
+                        animationSpec = repeatable(
+                            iterations = Int.MAX_VALUE,
+                            animation = tween(800, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        )
+                    )
+                    
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .padding(4.dp)
-                            .rotate3D(pitch = rotation, yaw = rotation)
+                            .size(48.dp)
+                            .scale(pulseScale)
                     ) {
                         Icon(
-                            imageVector = if (isActive) ImageVector.vectorResource(R.drawable.ic_heart_glass)
-                                else ImageVector.vectorResource(R.drawable.ic_heart_glass),
+                            painter = painterResource(id = R.drawable.ic_heart_glass),
                             contentDescription = null,
-                            tint = if (isActive) Color.Red else Color.Gray,
+                            tint = if (isActive) HeartGlow else Color.Gray.copy(alpha = 0.5f),
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
             }
             
-            // المستوى بنيون متوهج
+            // المستوى المتوهج
             Text(
-                text = "المستوى $level",
+                text = "الْمَرْحَلَةُ $level",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
                 style = TextStyle(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color.Cyan, Color.Magenta)
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(LiquidNeonGold, LiquidNeonCyan)
                     )
                 ),
-                modifier = Modifier.animatedGlow(glowColor = Color.Cyan)
+                modifier = Modifier.glowEffect(color = LiquidNeonGold, radius = 0.4f)
             )
             
-            // العملات المتطورة
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // العملات المتألقة
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = "$score",
-                    fontSize = 28.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    color = Color(0xFFFFD700)
+                    color = RoyalGold,
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = RoyalGold.copy(alpha = 0.5f),
+                            blurRadius = 8f
+                        )
+                    )
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "🪙",
-                    fontSize = 32.sp
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_coin_glass),
+                    contentDescription = null,
+                    tint = RoyalGold,
+                    modifier = Modifier.size(40.dp)
                 )
             }
         }
     }
 }
 
+// ==================== التلميح الهولوغرافي ====================
+
 @Composable
-fun GlassHint3D(hint: String) {
+fun HolographicHint(hint: String) {
     var rotationX by remember { mutableStateOf(0f) }
     var rotationY by remember { mutableStateOf(0f) }
+    var glowAlpha by remember { mutableStateOf(0.5f) }
+    
+    val infiniteTransition = rememberInfiniteTransition()
+    glowAlpha = infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    ).value
     
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .rotate3D(pitch = rotationX, yaw = rotationY)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xCC00CED1),
-                        Color(0x6600CED1)
+                        LiquidNeonCyan.copy(alpha = 0.2f),
+                        LiquidNeonMagenta.copy(alpha = 0.1f)
                     )
                 )
             )
             .border(
                 width = 2.dp,
                 brush = Brush.horizontalGradient(
-                    colors = listOf(Color.Cyan, Color.White, Color.Cyan)
+                    colors = listOf(LiquidNeonCyan, LiquidNeonMagenta, LiquidNeonCyan)
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(24.dp)
             )
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
-                    rotationX = (rotationX + dragAmount.y * 0.2f).coerceIn(-15f, 15f)
-                    rotationY = (rotationY + dragAmount.x * 0.2f).coerceIn(-15f, 15f)
+                    rotationX = (rotationX + dragAmount.y * 0.15f).coerceIn(-12f, 12f)
+                    rotationY = (rotationY + dragAmount.x * 0.15f).coerceIn(-12f, 12f)
                     change.consume()
                 }
             }
-            .padding(16.dp)
+            .padding(20.dp)
     ) {
-        Text(
-            text = "💡 $hint",
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "✨",
+                fontSize = 28.sp,
+                modifier = Modifier.glowEffect(color = LiquidNeonCyan)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = hint,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextGlow,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "✨",
+                fontSize = 28.sp,
+                modifier = Modifier.glowEffect(color = LiquidNeonMagenta)
+            )
+        }
     }
 }
 
+// ==================== بطاقة السؤال الكونية ====================
+
 @Composable
-fun QuestionCard3D(
+fun CosmicQuestionCard(
     question: String,
     showCorrect: Boolean,
     showWrong: Boolean
 ) {
     var scale by remember { mutableStateOf(1f) }
     var rotation by remember { mutableStateOf(0f) }
+    var cardGlow by remember { mutableStateOf(LiquidNeonCyan) }
     
     LaunchedEffect(showCorrect, showWrong) {
         if (showCorrect) {
-            scale = 1.1f
-            delay(200)
+            scale = 1.08f
+            cardGlow = EmeraldGreen
+            delay(250)
             scale = 1f
+            cardGlow = LiquidNeonCyan
         } else if (showWrong) {
-            rotation = 10f
+            rotation = 8f
+            cardGlow = CrimsonRed
             delay(100)
-            rotation = -10f
+            rotation = -8f
             delay(100)
             rotation = 0f
+            cardGlow = LiquidNeonCyan
         }
     }
     
@@ -503,12 +525,12 @@ fun QuestionCard3D(
             .padding(horizontal = 20.dp)
             .scale(scale)
             .rotate(rotation)
-            .clip(RoundedCornerShape(30.dp))
+            .clip(RoundedCornerShape(40.dp))
             .background(
                 Brush.linearGradient(
                     colors = listOf(
                         Color(0xCC000000),
-                        Color(0xCC1A1A2E),
+                        Color(0xCC1A0F2E),
                         Color(0xCC000000)
                     )
                 )
@@ -516,24 +538,25 @@ fun QuestionCard3D(
             .border(
                 width = 2.dp,
                 brush = Brush.sweepGradient(
-                    colors = listOf(Color.Cyan, Color.Magenta, Color.Cyan)
+                    colors = listOf(cardGlow, LiquidNeonMagenta, cardGlow)
                 ),
-                shape = RoundedCornerShape(30.dp)
+                shape = RoundedCornerShape(40.dp)
             )
+            .glowEffect(color = cardGlow, radius = 0.4f)
             .animateContentSize()
             .padding(40.dp)
     ) {
         Text(
             text = question,
-            fontSize = 24.sp,
+            fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = TextGlow,
             textAlign = TextAlign.Center,
-            lineHeight = 36.sp,
+            lineHeight = 40.sp,
             style = TextStyle(
                 shadow = Shadow(
-                    color = Color.Cyan,
-                    blurRadius = 10f,
+                    color = cardGlow.copy(alpha = 0.5f),
+                    blurRadius = 12f,
                     offset = Offset(2f, 2f)
                 )
             )
@@ -541,22 +564,30 @@ fun QuestionCard3D(
     }
 }
 
+// ==================== مربعات الإجابة السحرية ====================
+
 @Composable
-fun AnswerBoxes3D(
+fun MagicAnswerBoxes(
     answerLength: Int,
     userAnswer: String,
     showCorrect: Boolean,
     showWrong: Boolean
 ) {
     val infiniteTransition = rememberInfiniteTransition()
-    val borderColor by infiniteTransition.animateColor(
-        initialValue = Color.Cyan,
-        targetValue = Color.Magenta,
+    val borderGlow by infiniteTransition.animateColor(
+        initialValue = LiquidNeonCyan,
+        targetValue = LiquidNeonMagenta,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
+            animation = tween(1500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
+    
+    val finalBorderColor = when {
+        showCorrect -> EmeraldGreen
+        showWrong -> CrimsonRed
+        else -> borderGlow
+    }
     
     Row(
         modifier = Modifier
@@ -567,51 +598,52 @@ fun AnswerBoxes3D(
     ) {
         for (i in 0 until answerLength) {
             val char = userAnswer.getOrNull(i)?.toString() ?: ""
-            var scale by remember { mutableStateOf(1f) }
-            var rotation by remember { mutableStateOf(0f) }
+            var boxScale by remember { mutableStateOf(1f) }
+            var boxRotation by remember { mutableStateOf(0f) }
             
             LaunchedEffect(char) {
                 if (char.isNotEmpty()) {
-                    scale = 1.2f
-                    rotation = 10f
-                    delay(150)
-                    scale = 1f
-                    rotation = 0f
+                    boxScale = 1.2f
+                    boxRotation = 12f
+                    delay(120)
+                    boxScale = 1f
+                    boxRotation = 0f
                 }
             }
             
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .size(65.dp)
-                    .scale(scale)
-                    .rotate(rotation)
-                    .clip(RoundedCornerShape(16.dp))
+                    .padding(horizontal = 6.dp)
+                    .size(70.dp)
+                    .scale(boxScale)
+                    .rotate(boxRotation)
+                    .clip(RoundedCornerShape(20.dp))
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xAA00CED1),
-                                Color(0xAA1A1A2E)
+                                GlassCyan.copy(alpha = 0.8f),
+                                GlassPurple.copy(alpha = 0.6f)
                             )
                         )
                     )
                     .border(
-                        width = 2.dp,
-                        color = if (showCorrect) Color.Green else if (showWrong) Color.Red else borderColor,
-                        shape = RoundedCornerShape(16.dp)
+                        width = 3.dp,
+                        color = finalBorderColor,
+                        shape = RoundedCornerShape(20.dp)
                     )
+                    .glowEffect(color = finalBorderColor, radius = 0.3f)
                     .animateContentSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = char,
-                    fontSize = 28.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    color = Color.White,
+                    color = TextGlow,
                     style = TextStyle(
                         shadow = Shadow(
-                            color = borderColor,
-                            blurRadius = 8f
+                            color = finalBorderColor,
+                            blurRadius = 12f
                         )
                     )
                 )
@@ -620,8 +652,10 @@ fun AnswerBoxes3D(
     }
 }
 
+// ==================== أزرار المساعدة الكونية ====================
+
 @Composable
-fun HelpButtons3D(
+fun CosmicHelpButtons(
     isHintVisible: Boolean,
     score: Int,
     onBuyHint: () -> Unit,
@@ -631,21 +665,23 @@ fun HelpButtons3D(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        NeonHelpButton(
-            text = "💡 تلميح",
+        CosmicActionButton(
+            icon = "💡",
+            text = "تَلْمِيح",
             price = 50,
-            color = Color(0xFFFFD700),
+            color = LiquidNeonGold,
             enabled = !isHintVisible,
             onClick = onBuyHint,
             modifier = Modifier.weight(1f)
         )
         
-        NeonHelpButton(
-            text = "🔍 حرف",
+        CosmicActionButton(
+            icon = "🔮",
+            text = "حَرْف",
             price = 50,
-            color = Color.Cyan,
+            color = LiquidNeonCyan,
             enabled = true,
             onClick = onBuyLetter,
             modifier = Modifier.weight(1f)
@@ -654,7 +690,8 @@ fun HelpButtons3D(
 }
 
 @Composable
-fun NeonHelpButton(
+fun CosmicActionButton(
+    icon: String,
     text: String,
     price: Int,
     color: Color,
@@ -662,63 +699,83 @@ fun NeonHelpButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var scale by remember { mutableStateOf(1f) }
-    var rotation by remember { mutableStateOf(0f) }
+    var buttonScale by remember { mutableStateOf(1f) }
     
     Box(
         modifier = modifier
-            .height(60.dp)
-            .scale(scale)
-            .rotate(rotation)
-            .clip(RoundedCornerShape(20.dp))
+            .height(65.dp)
+            .scale(buttonScale)
+            .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.horizontalGradient(
                     colors = listOf(
-                        color.copy(alpha = 0.2f),
-                        color.copy(alpha = 0.1f)
+                        color.copy(alpha = 0.25f),
+                        color.copy(alpha = 0.15f)
                     )
                 )
             )
             .border(
-                width = 1.dp,
+                width = 1.5.dp,
                 color = color,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(24.dp)
             )
             .clickable(enabled = enabled) {
-                scale = 0.95f
-                rotation = 2f
+                buttonScale = 0.92f
                 onClick()
-                scale = 1f
-                rotation = 0f
+                buttonScale = 1f
             }
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = icon, fontSize = 22.sp)
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = text,
                 color = color,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "$price 🪙",
-                color = Color(0xFFFFD700),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black
-            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(LiquidNeonGold.copy(alpha = 0.25f))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "$price 🪙",
+                    color = LiquidNeonGold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
         }
     }
 }
 
+// ==================== لوحة المفاتيح السحرية ====================
+
 @Composable
-fun NeonKeyboard3D(
+fun MagicKeyboard(
     onLetterClick: (Char) -> Unit,
     onDeleteClick: () -> Unit
 ) {
     var isNumeric by remember { mutableStateOf(false) }
-    var keyboardRotation by remember { mutableStateOf(0f) }
+    var keyboardGlow by remember { mutableStateOf(0f) }
+    
+    val infiniteTransition = rememberInfiniteTransition()
+    keyboardGlow = infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    ).value
     
     val letterRows = listOf(
         listOf('ج', 'ح', 'خ', 'ه', 'ع', 'غ', 'ف', 'ق', 'ص'),
@@ -737,59 +794,61 @@ fun NeonKeyboard3D(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .rotate3D(pitch = 2f, yaw = keyboardRotation)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         val activeRows = if (isNumeric) numberRows else letterRows
         
-        activeRows.forEach { row ->
+        activeRows.forEachIndexed { rowIndex, row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 row.forEach { char ->
-                    var scale by remember { mutableStateOf(1f) }
+                    var keyScale by remember { mutableStateOf(1f) }
                     
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .scale(scale)
-                            .clip(RoundedCornerShape(12.dp))
+                            .scale(keyScale)
+                            .clip(RoundedCornerShape(16.dp))
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
-                                        Color(0x33FFFFFF),
-                                        Color(0x11FFFFFF)
+                                        GlassCrystal,
+                                        GlassCyan.copy(alpha = 0.2f)
                                     )
                                 )
                             )
                             .border(
                                 width = 1.dp,
                                 brush = Brush.horizontalGradient(
-                                    colors = listOf(Color.Cyan, Color.Magenta)
+                                    colors = listOf(
+                                        LiquidNeonCyan.copy(alpha = keyboardGlow),
+                                        LiquidNeonMagenta.copy(alpha = keyboardGlow)
+                                    )
                                 ),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                             .clickable {
-                                scale = 0.9f
+                                keyScale = 0.85f
                                 onLetterClick(char)
-                                scale = 1f
+                                keyScale = 1f
                             }
                             .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = char.toString(),
-                            fontSize = 24.sp,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            color = TextGlow,
                             style = TextStyle(
                                 shadow = Shadow(
-                                    color = Color.Cyan,
-                                    blurRadius = 4f
+                                    color = LiquidNeonCyan,
+                                    blurRadius = 6f
                                 )
                             )
                         )
@@ -801,40 +860,40 @@ fun NeonKeyboard3D(
         // الصف السفلي
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Button3D(
-                text = if (isNumeric) "أبج" else "123",
+            MagicKeyboardButton(
+                text = if (isNumeric) "أبجد" else "١٢٣",
                 onClick = { isNumeric = !isNumeric },
-                color = Color.Magenta,
+                color = LiquidNeonMagenta,
                 modifier = Modifier.weight(1f)
             )
             
-            Button3D(
-                text = "مسافة",
+            MagicKeyboardButton(
+                text = "␣ مَسَافَة",
                 onClick = { onLetterClick(' ') },
-                color = Color.Cyan,
+                color = LiquidNeonCyan,
                 modifier = Modifier.weight(2f)
             )
             
             if (isNumeric) {
-                Button3D(
-                    text = "0",
+                MagicKeyboardButton(
+                    text = "٠",
                     onClick = { onLetterClick('0') },
-                    color = Color.Cyan,
+                    color = LiquidNeonCyan,
                     modifier = Modifier.weight(1f)
                 )
-                Button3D(
+                MagicKeyboardButton(
                     text = "⌫",
                     onClick = onDeleteClick,
-                    color = Color.Red,
+                    color = LiquidNeonRed,
                     modifier = Modifier.weight(1f)
                 )
             } else {
-                Button3D(
-                    text = "⌫ مسح",
+                MagicKeyboardButton(
+                    text = "⌫ مَسْح",
                     onClick = onDeleteClick,
-                    color = Color.Red,
+                    color = LiquidNeonRed,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -843,29 +902,25 @@ fun NeonKeyboard3D(
 }
 
 @Composable
-fun Button3D(
+fun MagicKeyboardButton(
     text: String,
     onClick: () -> Unit,
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    var scale by remember { mutableStateOf(1f) }
+    var buttonScale by remember { mutableStateOf(1f) }
     
     Box(
         modifier = modifier
-            .height(55.dp)
-            .scale(scale)
-            .clip(RoundedCornerShape(12.dp))
+            .height(60.dp)
+            .scale(buttonScale)
+            .clip(RoundedCornerShape(18.dp))
             .background(color.copy(alpha = 0.2f))
-            .border(
-                width = 1.dp,
-                color = color,
-                shape = RoundedCornerShape(12.dp)
-            )
+            .border(1.5.dp, color, RoundedCornerShape(18.dp))
             .clickable {
-                scale = 0.95f
+                buttonScale = 0.92f
                 onClick()
-                scale = 1f
+                buttonScale = 1f
             }
             .padding(8.dp),
         contentAlignment = Alignment.Center
@@ -874,100 +929,109 @@ fun Button3D(
             text = text,
             color = color,
             fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            style = TextStyle(
+                shadow = Shadow(
+                    color = color.copy(alpha = 0.5f),
+                    blurRadius = 8f
+                )
+            )
         )
     }
 }
 
+// ==================== نافذة الإعلان الكونية ====================
+
 @Composable
-fun AdDialog3D(
+fun CosmicAdDialog(
     type: String,
     onDismiss: () -> Unit,
     onWatchAd: () -> Unit
 ) {
-    var scale by remember { mutableStateOf(0f) }
-    var rotation by remember { mutableStateOf(0f) }
+    var dialogScale by remember { mutableStateOf(0f) }
+    var dialogRotation by remember { mutableStateOf(0f) }
     
     LaunchedEffect(Unit) {
-        scale = 1f
-        rotation = 0f
+        dialogScale = 1f
+        dialogRotation = 0f
     }
     
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.9f))
+            .background(Color.Black.copy(alpha = 0.92f))
             .clickable(enabled = false) {},
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .scale(scale)
-                .rotate(rotation)
-                .clip(RoundedCornerShape(30.dp))
+                .fillMaxWidth(0.88f)
+                .scale(dialogScale)
+                .rotate(dialogRotation)
+                .clip(RoundedCornerShape(40.dp))
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
                             Color(0xFF1A1A2E),
-                            Color(0xFF16213E)
+                            Color(0xFF0F0F1A)
                         )
                     )
                 )
                 .border(
                     width = 2.dp,
-                    brush = Brush.sweepGradient(
-                        colors = listOf(Color.Cyan, Color.Magenta, Color.Cyan)
-                    ),
-                    shape = RoundedCornerShape(30.dp)
+                    brush = neonWaveGradient(),
+                    shape = RoundedCornerShape(40.dp)
                 )
-                .padding(30.dp),
+                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "🪙",
-                fontSize = 80.sp,
-                modifier = Modifier.animatedGlow(glowColor = Color.Yellow)
+                text = "🪙✨🪙",
+                fontSize = 72.sp,
+                modifier = Modifier.glowEffect(color = LiquidNeonGold, radius = 0.5f)
             )
             
             Spacer(modifier = Modifier.height(20.dp))
             
             Text(
-                text = "نفذت العملات!",
-                fontSize = 28.sp,
+                text = "نَفَذَتِ الْعُمْلاتُ!",
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Black,
-                color = Color.Red,
+                color = LiquidNeonRed,
                 style = TextStyle(
                     shadow = Shadow(
-                        color = Color.Red,
-                        blurRadius = 10f
+                        color = LiquidNeonRed,
+                        blurRadius = 12f
                     )
                 )
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             Text(
-                text = if (type == "hint") "شاهد إعلاناً لتحصل على تلميح مجاني" 
-                       else "شاهد إعلاناً لتحصل على حرف مجاني",
+                text = if (type == "hint") 
+                    "✨ شَاهِدْ إِعْلاناً لِتُحَصِّلَ تَلْمِيحاً مَجَّانِيّاً ✨"
+                else 
+                    "🔮 شَاهِدْ إِعْلاناً لِتُحَصِّلَ حَرْفاً مَجَّانِيّاً 🔮",
                 fontSize = 18.sp,
-                color = Color.White,
-                textAlign = TextAlign.Center
+                color = TextMystic,
+                textAlign = TextAlign.Center,
+                lineHeight = 28.sp
             )
             
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
-            Button3D(
-                text = "📺 مشاهدة إعلان",
+            MagicKeyboardButton(
+                text = "📺 شَاهِدُ الْإِعْلَانَ",
                 onClick = onWatchAd,
-                color = Color.Cyan,
+                color = LiquidNeonCyan,
                 modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            Button3D(
-                text = "❌ إلغاء",
+            MagicKeyboardButton(
+                text = "❌ إِلْغَاءُ",
                 onClick = onDismiss,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth()
@@ -976,13 +1040,15 @@ fun AdDialog3D(
     }
 }
 
+// ==================== أنيميشنات النجاح والفشل ====================
+
 @Composable
-fun CorrectAnimation3D() {
+fun CosmicSuccessAnimation() {
     var scale by remember { mutableStateOf(0f) }
     var rotation by remember { mutableStateOf(0f) }
     
     LaunchedEffect(Unit) {
-        scale = 1f
+        scale = 1.2f
         rotation = 360f
         delay(800)
         scale = 0f
@@ -991,64 +1057,110 @@ fun CorrectAnimation3D() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Green.copy(alpha = 0.7f)),
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        EmeraldGreen.copy(alpha = 0.8f),
+                        Color.Transparent
+                    ),
+                    radius = 500f
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "✓✓✓ صحيح! ✓✓✓",
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Black,
-            color = Color.White,
-            modifier = Modifier
-                .scale(scale)
-                .rotate(rotation)
-                .animatedGlow(glowColor = Color.Green)
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "✓✓✓ صَحِيحٌ! ✓✓✓",
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Black,
+                color = TextGlow,
+                modifier = Modifier
+                    .scale(scale)
+                    .rotate(rotation)
+                    .glowEffect(color = EmeraldGreen, radius = 0.6f)
+            )
+            Text(
+                text = "✨ إِجَابَةٌ مُذْهِلَةٌ ✨",
+                fontSize = 24.sp,
+                color = TextGlow,
+                modifier = Modifier.scale(scale)
+            )
+        }
     }
 }
 
 @Composable
-fun WrongAnimation3D() {
+fun CosmicFailureAnimation() {
     var scale by remember { mutableStateOf(0f) }
-    var rotation by remember { mutableStateOf(0f) }
+    var shake by remember { mutableStateOf(0f) }
     
     LaunchedEffect(Unit) {
-        scale = 1f
-        rotation = -360f
-        delay(800)
+        scale = 1.2f
+        shake = 15f
+        delay(100)
+        shake = -15f
+        delay(100)
+        shake = 10f
+        delay(100)
+        shake = 0f
+        delay(600)
         scale = 0f
     }
     
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Red.copy(alpha = 0.7f)),
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        CrimsonRed.copy(alpha = 0.7f),
+                        Color.Transparent
+                    ),
+                    radius = 500f
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "✗✗✗ خطأ! ✗✗✗",
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Black,
-            color = Color.White,
-            modifier = Modifier
-                .scale(scale)
-                .rotate(rotation)
-                .animatedGlow(glowColor = Color.Red)
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "✗✗✗ خَطَأٌ! ✗✗✗",
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Black,
+                color = TextGlow,
+                modifier = Modifier
+                    .scale(scale)
+                    .rotate(shake)
+                    .glowEffect(color = CrimsonRed, radius = 0.6f)
+            )
+            Text(
+                text = "💀 حَاوِلْ مَرَّةً أُخْرَى 💀",
+                fontSize = 24.sp,
+                color = TextGlow,
+                modifier = Modifier.scale(scale)
+            )
+        }
     }
 }
 
+// ==================== شاشات النتائج السينمائية ====================
+
 @Composable
-fun LevelCompleteCinematic(
+fun CosmicVictoryCinematic(
     level: Int,
     score: Int,
     onNext: () -> Unit,
     onHome: () -> Unit
 ) {
-    var scale by remember { mutableStateOf(0f) }
+    var cinematicScale by remember { mutableStateOf(0f) }
+    var starsRotation by remember { mutableStateOf(0f) }
     
     LaunchedEffect(Unit) {
-        scale = 1f
+        cinematicScale = 1f
+        starsRotation = 360f
     }
     
     Box(
@@ -1057,8 +1169,8 @@ fun LevelCompleteCinematic(
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFF00CED1).copy(alpha = 0.9f),
-                        Color.Black
+                        LiquidNeonGold.copy(alpha = 0.8f),
+                        CosmicBlack
                     ),
                     radius = 800f
                 )
@@ -1069,55 +1181,80 @@ fun LevelCompleteCinematic(
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .scale(scale)
-                .clip(RoundedCornerShape(40.dp))
-                .background(Color.Black.copy(alpha = 0.95f))
-                .border(2.dp, Color.Cyan, RoundedCornerShape(40.dp))
-                .padding(30.dp),
+                .scale(cinematicScale)
+                .clip(RoundedCornerShape(48.dp))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xDD000000),
+                            Color(0xCC1A0F2E)
+                        )
+                    )
+                )
+                .border(
+                    width = 3.dp,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(LiquidNeonGold, LiquidNeonCyan, LiquidNeonGold)
+                    ),
+                    shape = RoundedCornerShape(48.dp)
+                )
+                .padding(40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "🏆 انتصار ساحق! 🏆",
-                fontSize = 36.sp,
+                text = "🏆 نَصْرٌ سَاحِقٌ! 🏆",
+                fontSize = 40.sp,
                 fontWeight = FontWeight.Black,
-                color = Color.Cyan,
+                color = LiquidNeonGold,
                 style = TextStyle(
-                    shadow = Shadow(color = Color.Cyan, blurRadius = 15f)
+                    shadow = Shadow(
+                        color = LiquidNeonGold.copy(alpha = 0.6f),
+                        blurRadius = 20f
+                    )
+                ),
+                modifier = Modifier.glowEffect(color = LiquidNeonGold)
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "أَكْمَلْتَ الْمَرْحَلَةَ $level",
+                fontSize = 26.sp,
+                color = TextGlow
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "نُقَاطُكَ: $score",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = LiquidNeonGold,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = LiquidNeonGold.copy(alpha = 0.4f),
+                        blurRadius = 12f
+                    )
                 )
             )
             
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            Text(
-                text = "أكملت المستوى $level",
-                fontSize = 24.sp,
-                color = Color.White
-            )
-            
-            Text(
-                text = "نقاطك: $score",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFFD700)
-            )
-            
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Button3D(
-                    text = "المستوى التالي 🚀",
+                MagicKeyboardButton(
+                    text = "🚀 الْمَرْحَلَةُ التَّالِيَةُ",
                     onClick = onNext,
-                    color = Color.Cyan,
+                    color = LiquidNeonCyan,
                     modifier = Modifier.weight(1f)
                 )
                 
-                Button3D(
-                    text = "🏠 الرئيسية",
+                MagicKeyboardButton(
+                    text = "🏠 الرَّئِيسِيَّةُ",
                     onClick = onHome,
-                    color = Color.Magenta,
+                    color = LiquidNeonMagenta,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -1126,16 +1263,16 @@ fun LevelCompleteCinematic(
 }
 
 @Composable
-fun GameOverCinematic(
+fun CosmicDefeatCinematic(
     level: Int,
     score: Int,
     onRestart: () -> Unit,
     onHome: () -> Unit
 ) {
-    var scale by remember { mutableStateOf(0f) }
+    var cinematicScale by remember { mutableStateOf(0f) }
     
     LaunchedEffect(Unit) {
-        scale = 1f
+        cinematicScale = 1f
     }
     
     Box(
@@ -1144,8 +1281,8 @@ fun GameOverCinematic(
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        Color.Red.copy(alpha = 0.8f),
-                        Color.Black
+                        CrimsonRed.copy(alpha = 0.7f),
+                        CosmicBlack
                     ),
                     radius = 800f
                 )
@@ -1156,66 +1293,81 @@ fun GameOverCinematic(
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .scale(scale)
-                .clip(RoundedCornerShape(40.dp))
-                .background(Color.Black.copy(alpha = 0.95f))
-                .border(2.dp, Color.Red, RoundedCornerShape(40.dp))
-                .padding(30.dp),
+                .scale(cinematicScale)
+                .clip(RoundedCornerShape(48.dp))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xDD000000),
+                            Color(0xCC4A0000)
+                        )
+                    )
+                )
+                .border(
+                    width = 3.dp,
+                    color = CrimsonRed,
+                    shape = RoundedCornerShape(48.dp)
+                )
+                .padding(40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "💀 هزيمة نكراء 💀",
-                fontSize = 36.sp,
+                text = "💀 هَزِيمَةٌ نُكْرَاءُ 💀",
+                fontSize = 40.sp,
                 fontWeight = FontWeight.Black,
-                color = Color.Red,
+                color = CrimsonRed,
                 style = TextStyle(
-                    shadow = Shadow(color = Color.Red, blurRadius = 15f)
+                    shadow = Shadow(
+                        color = CrimsonRed.copy(alpha = 0.6f),
+                        blurRadius = 20f
+                    )
+                ),
+                modifier = Modifier.glowEffect(color = CrimsonRed)
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "سَقَطْتَ فِي الْمَرْحَلَةِ $level",
+                fontSize = 26.sp,
+                color = TextGlow
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "مَجْمُوعُ نُقَاطِكَ: $score",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = LiquidNeonGold,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = LiquidNeonGold.copy(alpha = 0.4f),
+                        blurRadius = 12f
+                    )
                 )
             )
             
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            Text(
-                text = "سقطت في المستوى $level",
-                fontSize = 24.sp,
-                color = Color.White
-            )
-            
-            Text(
-                text = "مجموع نقاطك: $score",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFFD700)
-            )
-            
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Button3D(
-                    text = "🔄 إعادة المحاولة",
+                MagicKeyboardButton(
+                    text = "🔄 إِعَادَةُ الْمُحَاوَلَةِ",
                     onClick = onRestart,
-                    color = Color.Red,
+                    color = CrimsonRed,
                     modifier = Modifier.weight(1f)
                 )
                 
-                Button3D(
-                    text = "🏠 الرئيسية",
+                MagicKeyboardButton(
+                    text = "🏠 الرَّئِيسِيَّةُ",
                     onClick = onHome,
-                    color = Color.Magenta,
+                    color = LiquidNeonMagenta,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
     }
 }
-
-data class Particle(
-    val x: Float,
-    val y: Float,
-    val size: Int,
-    val speed: Float,
-    val color: Color
-)
