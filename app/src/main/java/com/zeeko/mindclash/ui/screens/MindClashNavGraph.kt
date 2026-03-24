@@ -12,28 +12,23 @@ import com.zeeko.mindclash.ads.AdManager
 fun MindClashNavGraph(adManager: AdManager) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "home") {
+    // نقطة البداية أصبحت شاشة الفيديو (splash)
+    NavHost(navController = navController, startDestination = "splash") {
         
-        composable("home") {
-            HomeScreen(
-                onNavigateToGame = { level ->
-                    navController.navigate("game/$level")
-                }
-            )
+        composable("splash") {
+            SplashScreen(onNavigateToHome = {
+                // مسح شاشة الفيديو من الذاكرة لكي لا يعود لها عند ضغط زر الرجوع
+                navController.navigate("home") { popUpTo("splash") { inclusive = true } }
+            })
         }
 
-        composable(
-            route = "game/{level}",
-            arguments = listOf(navArgument("level") { type = NavType.IntType })
-        ) { backStackEntry ->
+        composable("home") {
+            HomeScreen(onNavigateToGame = { level -> navController.navigate("game/$level") })
+        }
+
+        composable(route = "game/{level}", arguments = listOf(navArgument("level") { type = NavType.IntType })) { backStackEntry ->
             val level = backStackEntry.arguments?.getInt("level") ?: 1
-            GameScreen(
-                level = level,
-                adManager = adManager,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
+            GameScreen(level = level, adManager = adManager, onNavigateBack = { navController.popBackStack() })
         }
     }
 }
