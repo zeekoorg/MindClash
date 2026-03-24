@@ -17,7 +17,7 @@ import javax.inject.Inject
 data class GameUiState(
     val isLoading: Boolean = true,
     val currentLevel: Int = 1,
-    val score: Int = 0, // أصبحت تعبر عن العملات الذهبية الكلية
+    val score: Int = 0,
     val lives: Int = 3,
     val questions: List<QuestionEntity> = emptyList(),
     val currentQuestionIndex: Int = 0,
@@ -45,7 +45,7 @@ class GameViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, currentLevel = level) }
             val levelQuestions = repository.getQuestionsForLevel(level)
             val savedData = progressRepository.getSavedGameState(level)
-            val globalCoins = progressRepository.getTotalCoins() // جلب رصيد البنك
+            val globalCoins = progressRepository.getTotalCoins()
 
             if (savedData != null) {
                 _state.update {
@@ -75,7 +75,28 @@ class GameViewModel @Inject constructor(
         )
     }
 
-    // --- 🛒 دوال شراء المساعدات بالعملات ---
+    // --- ⌨️ استقبال النص من كيبورد الهاتف ---
+    fun onNativeKeyboardInput(text: String) {
+        val answer = _state.value.currentQuestion?.answer ?: return
+        
+        // منع كتابة حروف أكثر من طول الإجابة
+        if (text.length <= answer.length) {
+            _state.update { it.copy(userAnswer = text) }
+            persistCurrentState()
+
+            // التحقق التلقائي عند اكتمال الحروف
+            if (text.length == answer.length) {
+                checkAnswer(text)
+            }
+        }
+    }
+
+    // --- 💰 اقتصاد اللعبة (العملات) ---
+    fun rewardCoins(amount: Int) {
+        progressRepository.addCoins(amount)
+        _state.update { it.copy(score = progressRepository.getTotalCoins()) }
+    }
+
     fun buyHint() {
         if (progressRepository.spendCoins(50)) {
             _state.update { it.copy(score = progressRepository.getTotalCoins(), isHintVisible = true) }
@@ -88,12 +109,12 @@ class GameViewModel @Inject constructor(
         if (_state.value.userAnswer.length < answer.length) {
             if (progressRepository.spendCoins(50)) {
                 _state.update { it.copy(score = progressRepository.getTotalCoins()) }
-                onLetterClick(answer[_state.value.userAnswer.length]) // نرسل الحرف الصحيح
+                val newAnswer = _state.value.userAnswer + answer[_state.value.userAnswer.length]
+                onNativeKeyboardInput(newAnswer)
             }
         }
     }
 
-    // في حال مشاهدة الإعلان بنجاح يتم الكشف مجاناً
     fun showPermanentHint() {
         _state.update { it.copy(isHintVisible = true) }
         persistCurrentState()
@@ -102,30 +123,8 @@ class GameViewModel @Inject constructor(
     fun revealLetterFree() {
         val answer = _state.value.currentQuestion?.answer ?: return
         if (_state.value.userAnswer.length < answer.length) {
-            onLetterClick(answer[_state.value.userAnswer.length])
-        }
-    }
-
-    fun onLetterClick(char: Char) {
-        val currentState = _state.value
-        val answer = currentState.currentQuestion?.answer ?: return
-
-        if (currentState.userAnswer.length < answer.length) {
-            val newAnswer = currentState.userAnswer + char
-            _state.update { it.copy(userAnswer = newAnswer) }
-            persistCurrentState()
-
-            if (newAnswer.length == answer.length) {
-                checkAnswer(newAnswer)
-            }
-        }
-    }
-
-    fun onDeleteClick() {
-        val currentAnswer = _state.value.userAnswer
-        if (currentAnswer.isNotEmpty()) {
-            _state.update { it.copy(userAnswer = currentAnswer.dropLast(1)) }
-            persistCurrentState()
+            val newAnswer = _state.value.userAnswer + answer[_state.value.userAnswer.length]
+            onNativeKeyboardInput(newAnswer)
         }
     }
 
@@ -134,7 +133,6 @@ class GameViewModel @Inject constructor(
         val currentQuestion = currentState.currentQuestion ?: return
 
         if (userAnswer == currentQuestion.answer) {
-            // إجابة صحيحة = زيادة في البنك
             progressRepository.addCoins(currentQuestion.points)
             _state.update { it.copy(score = progressRepository.getTotalCoins(), showCorrectAnimation = true) }
             viewModelScope.launch {
@@ -169,3 +167,4 @@ class GameViewModel @Inject constructor(
         loadLevel(_state.value.currentLevel)
     }
 }
+
