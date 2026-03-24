@@ -9,16 +9,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val LuxuryDarkColorScheme = darkColorScheme(
-    background = ObsidianBlack,
-    surface = MidnightBlue,
-    primary = LiquidGold,
-    secondary = NeonCyan,
-    tertiary = NeonMagenta,
-    error = CrimsonRed,
-    onBackground = TextSilver,
-    onSurface = TextSilver
-)
+private val CleanDarkScheme = darkColorScheme(background = DarkBackground)
 
 @Composable
 fun MindClashTheme(content: @Composable () -> Unit) {
@@ -26,14 +17,10 @@ fun MindClashTheme(content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = ObsidianBlack.toArgb()
-            window.navigationBarColor = ObsidianBlack.toArgb()
+            window.statusBarColor = DarkBackground.toArgb()
+            window.navigationBarColor = DarkBackground.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
-
-    MaterialTheme(
-        colorScheme = LuxuryDarkColorScheme,
-        content = content
-    )
+    MaterialTheme(colorScheme = CleanDarkScheme, content = content)
 }
