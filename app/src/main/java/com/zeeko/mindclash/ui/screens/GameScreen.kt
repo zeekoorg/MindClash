@@ -3,7 +3,7 @@ package com.zeeko.mindclash.ui.screens
 import android.app.Activity
 import android.widget.Toast
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -84,7 +84,6 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // --- 🌟 الجزء العلوي: القلوب (يمين)، اللوجو (وسط)، العملات (يسار) ---
-            // نستخدم الترتيب العربي (اليمين أولاً) لسهولة التوجيه
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -140,7 +139,7 @@ fun GameScreen(
             // --- 🃏 حاوية السؤال (مستطيل بخلفيتك الخاصة) ---
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth().height(220.dp) // يمكنك تعديل الارتفاع حسب صورتك
+                modifier = Modifier.fillMaxWidth().height(220.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.bg_question),
@@ -158,7 +157,6 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             // --- ⌨️ نظام كيبورد الهاتف (المربعات المخفية والظاهرة) ---
-            // حقل النص المخفي الذي يستدعي الكيبورد ويستقبل المدخلات
             BasicTextField(
                 value = state.userAnswer,
                 onValueChange = { viewModel.onNativeKeyboardInput(it) },
@@ -166,7 +164,6 @@ fun GameScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
 
-            // المربعات الظاهرة للمستخدم (عند النقر على الصف كله يفتح الكيبورد)
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
@@ -179,7 +176,6 @@ fun GameScreen(
                 for (i in 0 until answerLength) {
                     val char = state.userAnswer.getOrNull(i)?.toString() ?: ""
                     
-                    // تحكم بلمعان الإطار عند الكتابة
                     val borderColor = if (char.isNotEmpty()) NeonCyan else Color.White.copy(alpha = 0.5f)
                     
                     Box(
@@ -196,7 +192,6 @@ fun GameScreen(
                 }
             }
             
-            // نص إرشادي صغير جداً
             Text(
                 text = "انقر على المربعات للكتابة", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp,
                 modifier = Modifier.padding(top = 10.dp)
@@ -204,10 +199,9 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // --- 🆘 أزرار المساعدة السفلية (التلميح وكشف حرف بصورك الخاصة) ---
+            // --- 🆘 أزرار المساعدة السفلية ---
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 
-                // زر التلميح (💡)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyHint() else { adDialogType = "hint"; showAdDialog = true } }
@@ -220,7 +214,6 @@ fun GameScreen(
                     Text("💡 تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
-                // زر كشف حرف (🔍)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyRevealLetter() else { adDialogType = "letter"; showAdDialog = true } }
@@ -236,7 +229,7 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // --- 📺 نافذة الدايلوج الاحترافي (عند طلب زيادة العملات أو نفاذها) بصورك الخاصة ---
+        // --- 📺 نافذة الدايلوج الاحترافي ---
         if (showAdDialog) {
             val dialogTitle = if (adDialogType == "coins") "عملات مجانية!" else "رصيد غير كافٍ!"
             val dialogMessage = when (adDialogType) {
@@ -248,7 +241,6 @@ fun GameScreen(
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
                 Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, LiquidGold, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     
-                    // أيقونة الإعلان النيونية من تصميمك
                     Image(
                         painter = painterResource(id = R.drawable.ic_watch_ad),
                         contentDescription = "Watch Ad Dialog Icon",
@@ -287,7 +279,7 @@ fun GameScreen(
             }
         }
 
-        // --- طبقات المؤثرات السينمائية (الصح، الخطأ، الفوز، الخسارة) بأكواد الصور ---
+        // --- طبقات المؤثرات السينمائية ---
         AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlayCustom() }
         AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlayCustom() }
         
@@ -305,9 +297,8 @@ fun GameScreen(
     }
 }
 
-// ==================== المكونات المصغرة لتأثيرات النتائج (بالصور المخصصة) ====================
+// ==================== المكونات المصغرة لتأثيرات النتائج ====================
 
-// 1. مؤثر الإجابة الصحيحة (صح النيونية)
 @Composable
 fun NeoCorrectOverlayCustom() {
     var scale by remember { mutableStateOf(0f) }
@@ -322,7 +313,8 @@ fun NeoCorrectOverlayCustom() {
         scale = 0f
     }
     
-    Box(modifier = Modifier.fillMaxSize().background(EmeraldGreen.copy(alpha = 0.4f * glowAlpha)).alpha(scale), contentAlignment = Alignment.Center) {
+    // تم استبدال EmeraldGreen باللون المباشر Color(0xFF00FF7F)
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF00FF7F).copy(alpha = 0.4f * glowAlpha)).alpha(scale), contentAlignment = Alignment.Center) {
         Image(
             painter = painterResource(id = R.drawable.ic_status_correct),
             contentDescription = "Correct Answer Custom Neon Status",
@@ -331,7 +323,6 @@ fun NeoCorrectOverlayCustom() {
     }
 }
 
-// 2. مؤثر الإجابة الخاطئة (خطأ النيونية)
 @Composable
 fun NeoWrongOverlayCustom() {
     var scale by remember { mutableStateOf(0f) }
@@ -359,7 +350,6 @@ fun NeoWrongOverlayCustom() {
     }
 }
 
-// 3. شاشة النتيجة النهائية (الفوز/الخسارة بصورك الخاصة)
 @Composable
 fun LegendaryResultOverlayCustom(
     title: String,
@@ -383,7 +373,6 @@ fun LegendaryResultOverlayCustom(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             
-            // أيقونة النتيجة الأسطورية النيونية من تصميمك (كأس أو جمجمة)
             Image(
                 painter = painterResource(id = if(isWin) R.drawable.ic_state_win else R.drawable.ic_state_gameover),
                 contentDescription = if(isWin) "Victory Cinematic Icon" else "Defeat Cinematic Icon",
@@ -413,7 +402,6 @@ fun LegendaryResultOverlayCustom(
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                 
-                // زر الإجراء الرئيسي (أزرق نيون أو أحمر قرمزي)
                 Button(
                     onClick = onClick,
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor.copy(alpha = 0.2f)),
@@ -424,7 +412,6 @@ fun LegendaryResultOverlayCustom(
                     Text(buttonText, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
                 
-                // زر الرئيسية الرمادي الشفاف
                 Button(
                     onClick = onGoHome,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.05f)),
