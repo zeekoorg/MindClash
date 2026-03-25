@@ -9,7 +9,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val CleanDarkScheme = darkColorScheme(background = DarkBackground)
+private val CleanDarkScheme = darkColorScheme(
+    background = DarkBackground,
+    onBackground = TextWhite
+)
 
 @Composable
 fun MindClashTheme(content: @Composable () -> Unit) {
