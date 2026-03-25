@@ -75,23 +75,17 @@ class GameViewModel @Inject constructor(
         )
     }
 
-    // --- ⌨️ استقبال النص من كيبورد الهاتف ---
     fun onNativeKeyboardInput(text: String) {
         val answer = _state.value.currentQuestion?.answer ?: return
-        
-        // منع كتابة حروف أكثر من طول الإجابة
         if (text.length <= answer.length) {
             _state.update { it.copy(userAnswer = text) }
             persistCurrentState()
-
-            // التحقق التلقائي عند اكتمال الحروف
             if (text.length == answer.length) {
                 checkAnswer(text)
             }
         }
     }
 
-    // --- 💰 اقتصاد اللعبة (العملات) ---
     fun rewardCoins(amount: Int) {
         progressRepository.addCoins(amount)
         _state.update { it.copy(score = progressRepository.getTotalCoins()) }
@@ -106,12 +100,11 @@ class GameViewModel @Inject constructor(
 
     fun buyRevealLetter() {
         val answer = _state.value.currentQuestion?.answer ?: return
-        if (_state.value.userAnswer.length < answer.length) {
-            if (progressRepository.spendCoins(50)) {
-                _state.update { it.copy(score = progressRepository.getTotalCoins()) }
-                val newAnswer = _state.value.userAnswer + answer[_state.value.userAnswer.length]
-                onNativeKeyboardInput(newAnswer)
-            }
+        val letterToReveal = answer.getOrNull(_state.value.userAnswer.length) ?: return
+        if (progressRepository.spendCoins(50)) {
+            _state.update { it.copy(score = progressRepository.getTotalCoins()) }
+            val newAnswer = _state.value.userAnswer + letterToReveal
+            onNativeKeyboardInput(newAnswer)
         }
     }
 
@@ -122,10 +115,9 @@ class GameViewModel @Inject constructor(
 
     fun revealLetterFree() {
         val answer = _state.value.currentQuestion?.answer ?: return
-        if (_state.value.userAnswer.length < answer.length) {
-            val newAnswer = _state.value.userAnswer + answer[_state.value.userAnswer.length]
-            onNativeKeyboardInput(newAnswer)
-        }
+        val letterToReveal = answer.getOrNull(_state.value.userAnswer.length) ?: return
+        val newAnswer = _state.value.userAnswer + letterToReveal
+        onNativeKeyboardInput(newAnswer)
     }
 
     private fun checkAnswer(userAnswer: String) {
