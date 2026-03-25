@@ -18,9 +18,9 @@ import kotlinx.coroutines.delay
 fun SplashScreen(onNavigateToHome: () -> Unit) {
     val context = LocalContext.current
 
-    // الانتقال بعد 4 ثوانٍ (4000 ملي ثانية)
+    // الانتقال تلقائياً بعد 4 ثوانٍ (4000 ملي ثانية)
     LaunchedEffect(Unit) {
-        delay(4000)
+        delay(8000)
         onNavigateToHome()
     }
 
@@ -28,8 +28,9 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
         AndroidView(
             factory = { ctx ->
                 VideoView(ctx).apply {
-                    // ربط الفيديو من مجلد raw
+                    // ربط الفيديو من مجلد raw الجديد
                     setVideoURI(Uri.parse("android.resource://${ctx.packageName}/${R.raw.splash_video}"))
+                    // التأكد أن الفيديو لا يتكرر
                     setOnPreparedListener { it.isLooping = false }
                     start()
                 }
