@@ -1,36 +1,27 @@
 package com.zeeko.mindclash.ui.screens
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zeeko.mindclash.R
 import com.zeeko.mindclash.repository.UserProgressRepository
 import com.zeeko.mindclash.ui.theme.*
 import kotlinx.coroutines.delay
@@ -43,11 +34,12 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
     
     var unlockedLevel by remember { mutableIntStateOf(progressRepo.getUnlockedLevel()) }
     val totalLevels = 50
-    var starScale by remember { mutableStateOf(1f) }
+    var logoScale by remember { mutableStateOf(1f) }
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
+    // التمرير التلقائي للمستوى المفتوح وأنيميشن اللوجو
     LaunchedEffect(Unit) {
         unlockedLevel = progressRepo.getUnlockedLevel()
         val targetIndex = totalLevels - unlockedLevel
@@ -57,48 +49,44 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
             }
         }
         while (true) {
-            starScale = 1f + (kotlin.math.sin(System.currentTimeMillis() / 500.0).toFloat() * 0.1f)
+            // تأثير طفو خفيف للوجو
+            logoScale = 1f + (kotlin.math.sin(System.currentTimeMillis() / 500.0).toFloat() * 0.05f)
             delay(50)
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(cosmicGradient())
-    ) {
-        Column(
+    Box(modifier = Modifier.fillMaxSize()) {
+        
+        // 1. خلفية الخريطة (صورتك المصممة)
+        Image(
+            painter = painterResource(id = R.drawable.bg_game), // يمكنك تغييرها لـ bg_home إذا صممت خلفية مخصصة
+            contentDescription = "Home Background",
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
-        ) {
-            // الهيدر الكوني
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            
+            // 2. الهيدر (لوجو اللعبة بدلاً من النص البرمجي)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(GlassCrystal, Color.Transparent)
-                        )
-                    ),
+                    .height(160.dp)
+                    .background(Color.Black.copy(alpha = 0.4f)), // تظليل خفيف خلف اللوجو ليبرز
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "صراع العقول",
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Black,
-                    style = androidx.compose.ui.text.TextStyle(
-                        brush = goldGradient(),
-                        shadow = Shadow(
-                            color = LiquidGold.copy(alpha = 0.6f),
-                            blurRadius = 25f,
-                            offset = Offset(2f, 2f)
-                        )
-                    ),
-                    modifier = Modifier.scale(starScale)
+                Image(
+                    painter = painterResource(id = R.drawable.logo_game),
+                    contentDescription = "Game Logo",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .scale(logoScale)
+                        .padding(top = 30.dp)
                 )
             }
 
-            // مسار المستويات
+            // 3. مسار المستويات (الخريطة)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -109,6 +97,7 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
                     val isUnlocked = levelNum <= unlockedLevel
                     val isCurrent = levelNum == unlockedLevel
                     
+                    // التوزيع المتعرج للمستويات
                     val alignment = when (levelNum % 3) {
                         0 -> Alignment.CenterStart
                         1 -> Alignment.Center
@@ -121,7 +110,7 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
                             .padding(horizontal = 16.dp),
                         contentAlignment = alignment
                     ) {
-                        LevelNode(
+                        LevelNodeCustom(
                             levelNumber = levelNum,
                             isUnlocked = isUnlocked,
                             isCurrent = isCurrent,
@@ -135,84 +124,52 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
 }
 
 @Composable
-fun LevelNode(
+fun LevelNodeCustom(
     levelNumber: Int,
     isUnlocked: Boolean,
     isCurrent: Boolean,
     onClick: () -> Unit
 ) {
     var pulseScale by remember { mutableStateOf(1f) }
-    var rotation by remember { mutableStateOf(0f) }
     
-    val infiniteTransition = rememberInfiniteTransition()
+    // تأثير النبض للمستوى المفتوح حالياً فقط
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     pulseScale = infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = if (isCurrent) 1.15f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
+            animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        )
+        ),
+        label = "pulse_anim"
     ).value
-    
-    LaunchedEffect(isCurrent) {
-        if (isCurrent) {
-            rotation = 360f
-            delay(500)
-            rotation = 0f
-        }
-    }
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.rotate(rotation)
+        modifier = Modifier.clickable(enabled = isUnlocked) { onClick() }
     ) {
-        Box(
-            modifier = Modifier
-                .size(95.dp)
-                .scale(pulseScale)
-                .clip(CircleShape)
-                .background(
-                    if (isUnlocked) Brush.radialGradient(
-                        colors = listOf(GlassCyan, GlassPurple)
-                    ) else Brush.radialGradient(
-                        colors = listOf(Color.DarkGray, Color.Gray)
-                    )
-                )
-                .border(
-                    width = if (isCurrent) 4.dp else 2.dp,
-                    color = if (isUnlocked) NeonCyan else Color.Gray,
-                    shape = CircleShape
-                )
-                .clickable(enabled = isUnlocked) { onClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            when {
-                !isUnlocked -> Icon(
-                    Icons.Filled.Lock,
-                    contentDescription = "Locked",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(40.dp)
-                )
-                isCurrent -> Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = "Play",
-                    tint = LiquidGold,
-                    modifier = Modifier.size(50.dp)
-                )
-                else -> Icon(
-                    Icons.Filled.Star,
-                    contentDescription = "Completed",
-                    tint = LiquidGold,
-                    modifier = Modifier.size(45.dp)
-                )
-            }
+        
+        // الأيقونة المخصصة حسب حالة المستوى
+        val iconRes = when {
+            !isUnlocked -> R.drawable.ic_level_locked
+            isCurrent -> R.drawable.ic_level_current
+            else -> R.drawable.ic_level_completed
         }
+
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = "Level $levelNumber",
+            modifier = Modifier
+                .size(90.dp)
+                .scale(if (isCurrent) pulseScale else 1f)
+        )
         
         Spacer(modifier = Modifier.height(12.dp))
         
+        // رقم المستوى تحت الأيقونة
         Text(
             text = "مستوى $levelNumber",
-            color = if (isUnlocked) TextSilver else Color.Gray,
+            color = if (isUnlocked) Color.White else Color.Gray,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             style = if (isCurrent) androidx.compose.ui.text.TextStyle(
