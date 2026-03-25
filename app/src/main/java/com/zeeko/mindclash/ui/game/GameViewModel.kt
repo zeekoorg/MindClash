@@ -47,9 +47,8 @@ class GameViewModel @Inject constructor(
             var levelQuestions = repository.getQuestionsForLevel(level)
             var attempts = 0
             
-            // 1. حل مشكلة "جاري تهيئة العقول": الانتظار حتى تمتلئ قاعدة البيانات في أول تثبيت
             while (levelQuestions.isEmpty() && attempts < 5) {
-                delay(500) // انتظار نصف ثانية والمحاولة مجدداً
+                delay(500)
                 levelQuestions = repository.getQuestionsForLevel(level)
                 attempts++
             }
@@ -87,11 +86,14 @@ class GameViewModel @Inject constructor(
 
     fun onNativeKeyboardInput(text: String) {
         val answer = _state.value.currentQuestion?.answer ?: return
-        if (text.length <= answer.length) {
-            _state.update { it.copy(userAnswer = text) }
+        // تنظيف النص من أي مسافات زائدة أو نزول سطر يفسد الإجابة
+        val cleanText = text.replace("\n", "")
+        
+        if (cleanText.length <= answer.length) {
+            _state.update { it.copy(userAnswer = cleanText) }
             persistCurrentState()
-            if (text.length == answer.length) {
-                checkAnswer(text)
+            if (cleanText.length == answer.length) {
+                checkAnswer(cleanText)
             }
         }
     }
@@ -101,7 +103,6 @@ class GameViewModel @Inject constructor(
         _state.update { it.copy(score = progressRepository.getTotalCoins()) }
     }
 
-    // إضافة قلوب عند مشاهدة الإعلان
     fun rewardLives(amount: Int) {
         val newLives = _state.value.lives + amount
         _state.update { it.copy(lives = newLives) }
@@ -141,8 +142,8 @@ class GameViewModel @Inject constructor(
         val currentState = _state.value
         val currentQuestion = currentState.currentQuestion ?: return
 
+        // التحقق الدقيق من التطابق
         if (userAnswer == currentQuestion.answer) {
-            // 2. تعديل الجائزة لتصبح 5 عملات بدلاً من 100
             progressRepository.addCoins(5) 
             _state.update { it.copy(score = progressRepository.getTotalCoins(), showCorrectAnimation = true) }
             viewModelScope.launch {
@@ -177,4 +178,3 @@ class GameViewModel @Inject constructor(
         loadLevel(_state.value.currentLevel)
     }
 }
-
