@@ -1,8 +1,10 @@
 package com.zeeko.mindclash.ui.screens
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,89 +36,76 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
     
     var unlockedLevel by remember { mutableIntStateOf(progressRepo.getUnlockedLevel()) }
     val totalLevels = 50
-    var logoScale by remember { mutableStateOf(1f) }
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
-    // التمرير التلقائي للمستوى المفتوح وأنيميشن اللوجو
+    // متغير لتتبع عدد ضغطات زر الرجوع
+    var backPressedOnce by remember { mutableStateOf(false) }
+
+    // التحكم في زر الرجوع (الضغط مرتين للخروج)
+    BackHandler {
+        if (backPressedOnce) {
+            (context as? Activity)?.finish() // الخروج من التطبيق
+        } else {
+            backPressedOnce = true
+            Toast.makeText(context, "اضغط مرة أخرى للخروج", Toast.LENGTH_SHORT).show()
+            coroutineScope.launch {
+                delay(2000) // بعد ثانيتين يتم تصفير العداد
+                backPressedOnce = false
+            }
+        }
+    }
+    
+    // التمرير التلقائي للمستوى المفتوح
     LaunchedEffect(Unit) {
         unlockedLevel = progressRepo.getUnlockedLevel()
         val targetIndex = totalLevels - unlockedLevel
         if (targetIndex >= 0) {
-            coroutineScope.launch {
-                listState.animateScrollToItem(targetIndex)
-            }
-        }
-        while (true) {
-            // تأثير طفو خفيف للوجو
-            logoScale = 1f + (kotlin.math.sin(System.currentTimeMillis() / 500.0).toFloat() * 0.05f)
-            delay(50)
+            listState.animateScrollToItem(targetIndex)
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         
-        // 1. خلفية الخريطة (صورتك المصممة)
+        // خلفية الخريطة الجديدة (يجب إضافة صورة bg_home.png في مجلد drawable)
         Image(
-            painter = painterResource(id = R.drawable.bg_game), // يمكنك تغييرها لـ bg_home إذا صممت خلفية مخصصة
+            painter = painterResource(id = R.drawable.bg_home), 
             contentDescription = "Home Background",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            
-            // 2. الهيدر (لوجو اللعبة بدلاً من النص البرمجي)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .background(Color.Black.copy(alpha = 0.4f)), // تظليل خفيف خلف اللوجو ليبرز
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_game),
-                    contentDescription = "Game Logo",
-                    contentScale = ContentScale.Fit,
+        // مسار المستويات (الخريطة) أخذت الشاشة بالكامل بعد حذف الهيدر
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(vertical = 50.dp, horizontal = 30.dp),
+            verticalArrangement = Arrangement.spacedBy(45.dp)
+        ) {
+            itemsIndexed((1..totalLevels).reversed().toList()) { index, levelNum ->
+                val isUnlocked = levelNum <= unlockedLevel
+                val isCurrent = levelNum == unlockedLevel
+                
+                // التوزيع المتعرج للمستويات
+                val alignment = when (levelNum % 3) {
+                    0 -> Alignment.CenterStart
+                    1 -> Alignment.Center
+                    else -> Alignment.CenterEnd
+                }
+
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .scale(logoScale)
-                        .padding(top = 30.dp)
-                )
-            }
-
-            // 3. مسار المستويات (الخريطة)
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 50.dp, horizontal = 30.dp),
-                verticalArrangement = Arrangement.spacedBy(45.dp)
-            ) {
-                itemsIndexed((1..totalLevels).reversed().toList()) { index, levelNum ->
-                    val isUnlocked = levelNum <= unlockedLevel
-                    val isCurrent = levelNum == unlockedLevel
-                    
-                    // التوزيع المتعرج للمستويات
-                    val alignment = when (levelNum % 3) {
-                        0 -> Alignment.CenterStart
-                        1 -> Alignment.Center
-                        else -> Alignment.CenterEnd
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        contentAlignment = alignment
-                    ) {
-                        LevelNodeCustom(
-                            levelNumber = levelNum,
-                            isUnlocked = isUnlocked,
-                            isCurrent = isCurrent,
-                            onClick = { if (isUnlocked) onNavigateToGame(levelNum) }
-                        )
-                    }
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = alignment
+                ) {
+                    LevelNodeCustom(
+                        levelNumber = levelNum,
+                        isUnlocked = isUnlocked,
+                        isCurrent = isCurrent,
+                        onClick = { if (isUnlocked) onNavigateToGame(levelNum) }
+                    )
                 }
             }
         }
