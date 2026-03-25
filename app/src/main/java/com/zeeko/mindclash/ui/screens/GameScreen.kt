@@ -43,7 +43,7 @@ import com.zeeko.mindclash.ui.game.GameViewModel
 import com.zeeko.mindclash.ui.theme.*
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalLayoutApi::class) // 6. إضافة لدعم الكلمات الطويلة بأسطر جديدة
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GameScreen(
     level: Int,
@@ -58,7 +58,7 @@ fun GameScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     var showAdDialog by remember { mutableStateOf(false) }
-    var adDialogType by remember { mutableStateOf("") } // "hint", "letter", "coins", "hearts"
+    var adDialogType by remember { mutableStateOf("") } 
 
     LaunchedEffect(Unit) {
         viewModel.loadLevel(level)
@@ -77,83 +77,75 @@ fun GameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .imePadding(), // 5. ترفع الشاشة تلقائياً لمنع الكيبورد من تغطية المربعات
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 4. تبديل الأماكن (العملات يمين، القلوب يسار)
+            // العملات والقلوب واللوجو
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // العملات (أصبحت في اليمين)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null
                     ) { adDialogType = "coins"; showAdDialog = true }
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_coin_custom),
-                        contentDescription = "Coins",
-                        modifier = Modifier.size(60.dp)
-                    )
-                    Text(
-                        text = state.score.toString(), 
-                        color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 10f))
-                    )
+                    Image(painter = painterResource(id = R.drawable.ic_coin_custom), contentDescription = "Coins", modifier = Modifier.size(60.dp))
+                    Text(text = state.score.toString(), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 10f)))
                 }
 
-                Image(
-                    painter = painterResource(id = R.drawable.logo_game),
-                    contentDescription = "Logo",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.height(80.dp).weight(1f).padding(horizontal = 10.dp)
-                )
+                Image(painter = painterResource(id = R.drawable.logo_game), contentDescription = "Logo", contentScale = ContentScale.Fit, modifier = Modifier.height(80.dp).weight(1f).padding(horizontal = 10.dp))
 
-                // القلوب (أصبحت في اليسار) + ميزة طلب القلوب
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null
                     ) { adDialogType = "hearts"; showAdDialog = true }
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_heart_custom),
-                        contentDescription = "Hearts",
-                        modifier = Modifier.size(60.dp)
-                    )
-                    Text(
-                        text = state.lives.toString(), 
-                        color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 10f))
-                    )
+                    Image(painter = painterResource(id = R.drawable.ic_heart_custom), contentDescription = "Hearts", modifier = Modifier.size(60.dp))
+                    Text(text = state.lives.toString(), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 10f)))
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // حاوية السؤال
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth().height(220.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.bg_question),
-                    contentDescription = "Question",
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Image(painter = painterResource(id = R.drawable.bg_question), contentDescription = "Question", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+                Text(text = state.currentQuestion?.question ?: "جاري تهيئة العقول...", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center, lineHeight = 36.sp, modifier = Modifier.padding(25.dp))
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // --- 💡 كود ظهور التلميح (تم حله وإضافته) ---
+            AnimatedVisibility(
+                visible = state.isHintVisible,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Text(
-                    text = state.currentQuestion?.question ?: "جاري تهيئة العقول...",
-                    fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center,
-                    lineHeight = 36.sp, modifier = Modifier.padding(25.dp)
+                    text = " تلميح: ${state.currentQuestion?.hint ?: "لا يوجد تلميح"}",
+                    color = LiquidGold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp)) // تم تقليل المسافة لرفع المربعات للأعلى
+            // --- 🧠 التعرف الذكي على لغة الإجابة لتعديل اتجاه المربعات ---
+            val currentAnswer = state.currentQuestion?.answer ?: ""
+            // التحقق مما إذا كانت الإجابة تحتوي على حروف عربية
+            val isArabicAnswer = currentAnswer.any { it in '\u0600'..'\u06FF' }
+            // إذا كانت عربية اجعلها من اليمين لليسار، إذا أرقام/إنجليزي اجعلها يسار ليمين
+            val layoutDirection = if (isArabicAnswer) LayoutDirection.Rtl else LayoutDirection.Ltr
 
             BasicTextField(
                 value = state.userAnswer,
@@ -162,9 +154,8 @@ fun GameScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
 
-            // 3. عكس الاتجاه لليسار لليمين باستخدام Ltr 
-            // 6. استخدام FlowRow لدعم الكلمات الطويلة
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            // تطبيق الاتجاه الذكي على المربعات
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -174,9 +165,9 @@ fun GameScreen(
                             keyboardController?.show()
                         },
                     horizontalArrangement = Arrangement.Center,
-                    verticalArrangement = Arrangement.spacedBy(10.dp) // المسافة بين الأسطر لو طالت الكلمة
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val answerLength = state.currentQuestion?.answer?.length ?: 0
+                    val answerLength = currentAnswer.length
                     for (i in 0 until answerLength) {
                         val char = state.userAnswer.getOrNull(i)?.toString() ?: ""
                         val borderColor = if (char.isNotEmpty()) NeonCyan else Color.White.copy(alpha = 0.5f)
@@ -203,21 +194,17 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 7. مباعدة أزرار التلميح لأقصى اليمين وكشف حرف لأقصى اليسار
+            // أزرار المساعدة السفلية
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 25.dp),
-                horizontalArrangement = Arrangement.SpaceBetween, // تباعد الأزرار للطرفين
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyHint() else { adDialogType = "hint"; showAdDialog = true } }
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_btn_hint),
-                        contentDescription = "Hint",
-                        modifier = Modifier.size(70.dp).padding(5.dp)
-                    )
+                    Image(painter = painterResource(id = R.drawable.ic_btn_hint), contentDescription = "Hint", modifier = Modifier.size(70.dp).padding(5.dp))
                     Text("تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
@@ -225,24 +212,16 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyRevealLetter() else { adDialogType = "letter"; showAdDialog = true } }
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_btn_reveal),
-                        contentDescription = "Reveal Letter",
-                        modifier = Modifier.size(70.dp).padding(5.dp)
-                    )
-                    Text("🔍 كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Image(painter = painterResource(id = R.drawable.ic_btn_reveal), contentDescription = "Reveal", modifier = Modifier.size(70.dp).padding(5.dp))
+                    Text(" كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // نافذة الإعلانات المحدثة (تدعم القلوب والعملات)
+        // نافذة الإعلانات
         if (showAdDialog) {
-            val dialogTitle = when (adDialogType) {
-                "coins" -> "عملات مجانية!"
-                "hearts" -> "قلوب إضافية!"
-                else -> "رصيد غير كافٍ!"
-            }
+            val dialogTitle = when (adDialogType) { "coins" -> "عملات مجانية!"; "hearts" -> "قلوب إضافية!"; else -> "رصيد غير كافٍ!" }
             val dialogMessage = when (adDialogType) {
                 "hint" -> "لقد نفذت العملات الذهبية، هل تريد مشاهدة إعلان لكشف تلميح؟"
                 "letter" -> "لقد نفذت العملات الذهبية، هل تريد مشاهدة إعلان لكشف حرف؟"
@@ -253,37 +232,28 @@ fun GameScreen(
             
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
                 Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, mainColor, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_watch_ad),
-                        contentDescription = "Watch Ad Dialog Icon",
-                        modifier = Modifier.size(100.dp)
-                    )
+                    Image(painter = painterResource(id = R.drawable.ic_watch_ad), contentDescription = "Ad Icon", modifier = Modifier.size(100.dp))
                     Spacer(modifier = Modifier.height(15.dp))
                     Text(text = dialogTitle, fontSize = 28.sp, fontWeight = FontWeight.Black, color = mainColor)
                     Spacer(modifier = Modifier.height(15.dp))
                     Text(text = dialogMessage, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center, lineHeight = 28.sp)
                     Spacer(modifier = Modifier.height(30.dp))
-                    
-                    Button(
-                        onClick = {
-                            showAdDialog = false
-                            adManager.showRewardedAd(
-                                activity = context,
-                                onRewardEarned = { 
-                                    when (adDialogType) {
-                                        "hint" -> viewModel.showPermanentHint()
-                                        "letter" -> viewModel.revealLetterFree()
-                                        "coins" -> viewModel.rewardCoins(50)
-                                        "hearts" -> viewModel.rewardLives(5)
-                                    }
-                                },
-                                onAdFailed = { Toast.makeText(context, "تأكد من الإتصال", Toast.LENGTH_SHORT).show() }
-                            )
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = mainColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, mainColor), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)
-                    ) {
-                        Text("مشاهدة إعلان", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Button(onClick = {
+                        showAdDialog = false
+                        adManager.showRewardedAd(
+                            activity = context,
+                            onRewardEarned = { 
+                                when (adDialogType) {
+                                    "hint" -> viewModel.showPermanentHint()
+                                    "letter" -> viewModel.revealLetterFree()
+                                    "coins" -> viewModel.rewardCoins(50)
+                                    "hearts" -> viewModel.rewardLives(5)
+                                }
+                            },
+                            onAdFailed = { Toast.makeText(context, "تأكد من الإتصال", Toast.LENGTH_SHORT).show() }
+                        )
+                    }, colors = ButtonDefaults.buttonColors(containerColor = mainColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, mainColor), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
+                        Text("مشاهدة إعلان ", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(15.dp))
                     Button(onClick = { showAdDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
@@ -293,38 +263,26 @@ fun GameScreen(
             }
         }
 
+        // المؤثرات
         AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlayCustom() }
         AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlayCustom() }
-        
         AnimatedVisibility(visible = state.isLevelComplete, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) { 
-            LegendaryResultOverlayCustom(title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ", buttonColor = NeonCyan, 
-                onClick = { adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) } }, 
-                onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
+            LegendaryResultOverlayCustom(title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ", buttonColor = NeonCyan, onClick = { adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) } }, onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
         }
-        
         AnimatedVisibility(visible = state.isGameOver, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) { 
-            LegendaryResultOverlayCustom(title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "انتقام (إعادة)", buttonColor = CrimsonRed, 
-                onClick = { adManager.showInterstitialAd(context) { viewModel.resetGame() } }, 
-                onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
+            LegendaryResultOverlayCustom(title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "إعادة", buttonColor = CrimsonRed, onClick = { adManager.showInterstitialAd(context) { viewModel.resetGame() } }, onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
         }
     }
 }
 
-// المؤثرات
+// مكونات المؤثرات السفلية
 @Composable
 fun NeoCorrectOverlayCustom() {
     var scale by remember { mutableStateOf(0f) }
     var glowAlpha by remember { mutableStateOf(0.4f) }
-    
     val infiniteTransition = rememberInfiniteTransition(label = "")
     glowAlpha = infiniteTransition.animateFloat(initialValue = 0.4f, targetValue = 0.8f, animationSpec = infiniteRepeatable(animation = tween(400, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse), label = "").value
-    
-    LaunchedEffect(Unit) {
-        scale = 1.2f
-        delay(600)
-        scale = 0f
-    }
-    
+    LaunchedEffect(Unit) { scale = 1.2f; delay(600); scale = 0f }
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF00FF7F).copy(alpha = 0.4f * glowAlpha)).alpha(scale), contentAlignment = Alignment.Center) {
         Image(painter = painterResource(id = R.drawable.ic_status_correct), contentDescription = "Correct", modifier = Modifier.fillMaxWidth(0.6f).aspectRatio(1f).scale(scale))
     }
@@ -334,11 +292,7 @@ fun NeoCorrectOverlayCustom() {
 fun NeoWrongOverlayCustom() {
     var scale by remember { mutableStateOf(0f) }
     var shake by remember { mutableStateOf(0f) }
-    
-    LaunchedEffect(Unit) {
-        scale = 1.2f; shake = 15f; delay(100); shake = -15f; delay(100); shake = 10f; delay(100); shake = 0f; delay(400); scale = 0f
-    }
-    
+    LaunchedEffect(Unit) { scale = 1.2f; shake = 15f; delay(100); shake = -15f; delay(100); shake = 10f; delay(100); shake = 0f; delay(400); scale = 0f }
     Box(modifier = Modifier.fillMaxSize().background(CrimsonRed.copy(alpha = 0.4f)).alpha(scale), contentAlignment = Alignment.Center) {
         Image(painter = painterResource(id = R.drawable.ic_status_wrong), contentDescription = "Wrong", modifier = Modifier.fillMaxWidth(0.6f).aspectRatio(1f).scale(scale).then(Modifier.offset(x = shake.dp)))
     }
@@ -359,12 +313,8 @@ fun LegendaryResultOverlayCustom(title: String, message: String, score: Int, isW
             Text(text = "نقاط المستوى: $score", fontSize = 26.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 10f)))
             Spacer(modifier = Modifier.height(30.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-                Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = buttonColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, buttonColor), modifier = Modifier.weight(1f).height(55.dp), shape = RoundedCornerShape(20.dp)) {
-                    Text(buttonText, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-                Button(onClick = onGoHome, colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.05f)), border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray), modifier = Modifier.weight(1f).height(55.dp), shape = RoundedCornerShape(20.dp)) {
-                    Text("🏠 الرئيسية", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
+                Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = buttonColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, buttonColor), modifier = Modifier.weight(1f).height(55.dp), shape = RoundedCornerShape(20.dp)) { Text(buttonText, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+                Button(onClick = onGoHome, colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.05f)), border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray), modifier = Modifier.weight(1f).height(55.dp), shape = RoundedCornerShape(20.dp)) { Text("🏠 الرئيسية", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
             }
         }
     }
