@@ -43,7 +43,17 @@ class GameViewModel @Inject constructor(
     fun loadLevel(level: Int) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, currentLevel = level) }
-            val levelQuestions = repository.getQuestionsForLevel(level)
+            
+            var levelQuestions = repository.getQuestionsForLevel(level)
+            var attempts = 0
+            
+            // 1. حل مشكلة "جاري تهيئة العقول": الانتظار حتى تمتلئ قاعدة البيانات في أول تثبيت
+            while (levelQuestions.isEmpty() && attempts < 5) {
+                delay(500) // انتظار نصف ثانية والمحاولة مجدداً
+                levelQuestions = repository.getQuestionsForLevel(level)
+                attempts++
+            }
+
             val savedData = progressRepository.getSavedGameState(level)
             val globalCoins = progressRepository.getTotalCoins()
 
@@ -91,6 +101,13 @@ class GameViewModel @Inject constructor(
         _state.update { it.copy(score = progressRepository.getTotalCoins()) }
     }
 
+    // إضافة قلوب عند مشاهدة الإعلان
+    fun rewardLives(amount: Int) {
+        val newLives = _state.value.lives + amount
+        _state.update { it.copy(lives = newLives) }
+        persistCurrentState()
+    }
+
     fun buyHint() {
         if (progressRepository.spendCoins(50)) {
             _state.update { it.copy(score = progressRepository.getTotalCoins(), isHintVisible = true) }
@@ -125,7 +142,8 @@ class GameViewModel @Inject constructor(
         val currentQuestion = currentState.currentQuestion ?: return
 
         if (userAnswer == currentQuestion.answer) {
-            progressRepository.addCoins(currentQuestion.points)
+            // 2. تعديل الجائزة لتصبح 5 عملات بدلاً من 100
+            progressRepository.addCoins(5) 
             _state.update { it.copy(score = progressRepository.getTotalCoins(), showCorrectAnimation = true) }
             viewModelScope.launch {
                 delay(800)
