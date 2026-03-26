@@ -29,9 +29,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -59,6 +61,19 @@ fun GameScreen(
 
     var showAdDialog by remember { mutableStateOf(false) }
     var adDialogType by remember { mutableStateOf("") } 
+
+    // --- 🔑 الحل السحري لمشكلة المؤشر (Cursor) ---
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(state.userAnswer)) }
+
+    // هذا الكود يراقب أي تحديث للإجابة (مثل كشف حرف) ويجبر المؤشر على الذهاب للنهاية
+    LaunchedEffect(state.userAnswer) {
+        if (textFieldValue.text != state.userAnswer) {
+            textFieldValue = TextFieldValue(
+                text = state.userAnswer,
+                selection = TextRange(state.userAnswer.length) // إجبار المؤشر للبقاء في النهاية
+            )
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadLevel(level)
@@ -124,7 +139,7 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // --- 💡 كود ظهور التلميح (تم حله وإضافته) ---
+            // كود ظهور التلميح
             AnimatedVisibility(
                 visible = state.isHintVisible,
                 enter = fadeIn() + expandVertically(),
@@ -140,16 +155,22 @@ fun GameScreen(
                 )
             }
 
-            // --- 🧠 التعرف الذكي على لغة الإجابة لتعديل اتجاه المربعات ---
+            // التعرف الذكي على لغة الإجابة لتعديل اتجاه المربعات
             val currentAnswer = state.currentQuestion?.answer ?: ""
-            // التحقق مما إذا كانت الإجابة تحتوي على حروف عربية
             val isArabicAnswer = currentAnswer.any { it in '\u0600'..'\u06FF' }
-            // إذا كانت عربية اجعلها من اليمين لليسار، إذا أرقام/إنجليزي اجعلها يسار ليمين
             val layoutDirection = if (isArabicAnswer) LayoutDirection.Rtl else LayoutDirection.Ltr
 
+            // حقل النص المحدث لحل مشكلة المؤشر
             BasicTextField(
-                value = state.userAnswer,
-                onValueChange = { viewModel.onNativeKeyboardInput(it) },
+                value = textFieldValue,
+                onValueChange = { newValue ->
+                    val answerLength = state.currentQuestion?.answer?.length ?: 0
+                    val cleanText = newValue.text.replace("\n", "") // منع نزول السطر
+                    if (cleanText.length <= answerLength) {
+                        textFieldValue = newValue.copy(text = cleanText)
+                        viewModel.onNativeKeyboardInput(cleanText)
+                    }
+                },
                 modifier = Modifier.size(1.dp).alpha(0f).focusRequester(focusRequester),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
@@ -213,7 +234,7 @@ fun GameScreen(
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyRevealLetter() else { adDialogType = "letter"; showAdDialog = true } }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_reveal), contentDescription = "Reveal", modifier = Modifier.size(70.dp).padding(5.dp))
-                    Text(" كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -250,7 +271,7 @@ fun GameScreen(
                                     "hearts" -> viewModel.rewardLives(5)
                                 }
                             },
-                            onAdFailed = { Toast.makeText(context, "تأكد من الإتصال", Toast.LENGTH_SHORT).show() }
+                            onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز حالياً", Toast.LENGTH_SHORT).show() }
                         )
                     }, colors = ButtonDefaults.buttonColors(containerColor = mainColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, mainColor), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
                         Text("مشاهدة إعلان ", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
