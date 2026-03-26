@@ -27,7 +27,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 1. قراءة الذاكرة فور فتح التطبيق لمعرفة ما إذا كان المستخدم قد شاهد المقدمة
+        // 1. تهيئة محرك الصوت فوراً
+        AudioPlayer.init(applicationContext)
+
         val sharedPreferences = getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE)
         val hasSeenIntro = sharedPreferences.getBoolean("HasSeenIntro", false)
 
@@ -37,23 +39,29 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 2. متغير ذكي يتحكم في الشاشة المعروضة بناءً على حالة الذاكرة
                     var showIntro by remember { mutableStateOf(!hasSeenIntro) }
 
                     if (showIntro) {
-                        // 3. عرض شاشة الفيديو السينمائي للاعب الجديد
                         IntroVideoScreen(
-                            onVideoFinished = {
-                                // بمجرد انتهاء الفيديو أو التخطي، نغير الحالة لتظهر اللعبة
-                                showIntro = false
-                            }
+                            onVideoFinished = { showIntro = false }
                         )
                     } else {
-                        // 4. الدخول المباشر للعبة (الخريطة والتنقل) للاعبين القدامى
                         MindClashNavGraph(adManager = adManager)
                     }
                 }
             }
         }
+    }
+
+    // إيقاف الموسيقى عند الخروج للخلفية
+    override fun onPause() {
+        super.onPause()
+        AudioPlayer.pauseBGM()
+    }
+
+    // تشغيل الموسيقى عند العودة
+    override fun onResume() {
+        super.onResume()
+        AudioPlayer.startBGM()
     }
 }
