@@ -50,15 +50,13 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
     val context = LocalContext.current
     val progressRepo = remember { UserProgressRepository(context) }
     
-    // إعدادات الذاكرة لسياسة الخصوصية
+    // --- إعدادات الخصوصية والذاكرة ---
     val sharedPreferences = context.getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE)
     var hasAgreedToPrivacy by remember { mutableStateOf(sharedPreferences.getBoolean("PrivacyAgreed", false)) }
-    
-    // التحكم في النوافذ
     var showSettingsDialog by remember { mutableStateOf(false) }
     
-    // رابط سياسة الخصوصية (قم بتغييره للرابط الخاص بك)
-    val privacyPolicyUrl = "https://www.google.com" // ضع رابطك هنا
+    // 🔗 رابط سياسة الخصوصية (قم بتعديله لاحقاً)
+    val privacyPolicyUrl = "https://www.google.com" 
 
     var unlockedLevel by remember { mutableIntStateOf(progressRepo.getUnlockedLevel()) }
     val totalLevels = 50
@@ -90,7 +88,6 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         
-        // الخلفية
         Image(
             painter = painterResource(id = R.drawable.bg_home), 
             contentDescription = "Home Background",
@@ -98,11 +95,10 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // مسار المستويات
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 100.dp, bottom = 50.dp, start = 30.dp, end = 30.dp), // أضفنا مسافة علوية لزر الإعدادات
+            contentPadding = PaddingValues(top = 100.dp, bottom = 50.dp, start = 30.dp, end = 30.dp), 
             verticalArrangement = Arrangement.spacedBy(45.dp)
         ) {
             itemsIndexed((1..totalLevels).reversed().toList()) { index, levelNum ->
@@ -125,19 +121,20 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
             }
         }
 
-        // --- ⚙️ أيقونة الإعدادات العلوية ---
+        // --- ⚙️ زر الإعدادات (الترس) ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(top = 40.dp, end = 20.dp) // المسافة من الأعلى واليمين
                 .align(Alignment.TopEnd)
         ) {
             IconButton(
                 onClick = { showSettingsDialog = true },
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .border(1.dp, NeonCyan, CircleShape)
+                    .background(VoidBlack.copy(alpha = 0.8f))
+                    .border(2.dp, NeonCyan, CircleShape)
+                    .size(55.dp) // حجم الزر
             ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
@@ -147,68 +144,79 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
                 )
             }
         }
+    }
 
-        // --- 🛡️ نافذة سياسة الخصوصية (تظهر لأول مرة فقط) ---
-        if (!hasAgreedToPrivacy) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
-                Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, NeonCyan, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "سياسة الخصوصية", fontSize = 26.sp, fontWeight = FontWeight.Black, color = NeonCyan)
-                    Spacer(modifier = Modifier.height(15.dp))
-                    Text(text = "مرحباً بك في صراع العقول! يرجى قراءة والموافقة على سياسة الخصوصية الخاصة بنا لنتمكن من تقديم أفضل تجربة لعب لك.", fontSize = 16.sp, color = Color.White, textAlign = TextAlign.Center, lineHeight = 26.sp)
-                    Spacer(modifier = Modifier.height(30.dp))
-                    
-                    Button(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl))
-                            context.startActivity(intent)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan), modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(20.dp)
-                    ) { Text("قراءة سياسة الخصوصية 📖", color = Color.White, fontSize = 16.sp) }
-                    
-                    Spacer(modifier = Modifier.height(15.dp))
-                    
-                    Button(
-                        onClick = {
-                            sharedPreferences.edit().putBoolean("PrivacyAgreed", true).apply()
-                            hasAgreedToPrivacy = true
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan), modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(20.dp)
-                    ) { Text("موافق ✅", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
-                }
+    // ==========================================
+    // --- النوافذ المنبثقة (Dialogs) يجب أن تكون خارج الـ Box الرئيسي لتغطي الشاشة ---
+    // ==========================================
+
+    // --- 🛡️ نافذة سياسة الخصوصية الإجبارية (عند أول تشغيل) ---
+    if (!hasAgreedToPrivacy) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.95f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
+            Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, NeonCyan, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "سياسة الخصوصية", fontSize = 28.sp, fontWeight = FontWeight.Black, color = NeonCyan)
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                Text(
+                    text = "مرحباً بك في صراع العقول!\nيرجى قراءة والموافقة على سياسة الخصوصية الخاصة بنا لنتمكن من تقديم أفضل تجربة لعب لك وحفظ تقدمك.", 
+                    fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center, lineHeight = 28.sp
+                )
+                Spacer(modifier = Modifier.height(30.dp))
+                
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl))
+                        context.startActivity(intent)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan), modifier = Modifier.fillMaxWidth().height(55.dp), shape = RoundedCornerShape(20.dp)
+                ) { Text("قراءة سياسة الخصوصية 📖", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+                
+                Spacer(modifier = Modifier.height(15.dp))
+                
+                Button(
+                    onClick = {
+                        sharedPreferences.edit().putBoolean("PrivacyAgreed", true).apply()
+                        hasAgreedToPrivacy = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan), modifier = Modifier.fillMaxWidth().height(55.dp), shape = RoundedCornerShape(20.dp)
+                ) { Text("موافق ومتابعة ✅", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) }
             }
         }
+    }
 
-        // --- ⚙️ نافذة الإعدادات والمعلومات ---
-        if (showSettingsDialog) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
-                Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, LiquidGold, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "إعدادات اللعبة", fontSize = 28.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
-                    Spacer(modifier = Modifier.height(20.dp))
-                    
-                    // معلومات المطور
-                    Text(text = "لعبة صراع العقول", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text(text = "الإصدار 1.0.0", fontSize = 14.sp, color = Color.Gray)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(text = "تطوير:", fontSize = 16.sp, color = Color.White)
-                    Text(text = "ZEEKO ORG", fontSize = 24.sp, fontWeight = FontWeight.Black, color = NeonCyan, style = TextStyle(shadow = Shadow(color = NeonCyan, blurRadius = 10f)))
-                    
-                    Spacer(modifier = Modifier.height(30.dp))
-                    
-                    Button(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl))
-                            context.startActivity(intent)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, LiquidGold), modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(20.dp)
-                    ) { Text("سياسة الخصوصية 📜", color = Color.White, fontSize = 16.sp) }
-                    
-                    Spacer(modifier = Modifier.height(15.dp))
-                    
-                    Button(
-                        onClick = { showSettingsDialog = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = LiquidGold.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, LiquidGold), modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(20.dp)
-                    ) { Text("إغلاق", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
-                }
+    // --- ℹ️ نافذة الإعدادات ومعلومات التطبيق (عند النقر على الترس) ---
+    if (showSettingsDialog) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
+            Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, LiquidGold, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                
+                Text(text = "إعدادات اللعبة", fontSize = 28.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
+                Spacer(modifier = Modifier.height(25.dp))
+                
+                // معلومات التطبيق
+                Text(text = "صراع العقول", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = "الإصدار 1.0.0", fontSize = 16.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                // هوية المطور (ZEEKO ORG)
+                Text(text = "تطوير بواسطة:", fontSize = 16.sp, color = Color.LightGray)
+                Text(text = "ZEEKO ORG", fontSize = 32.sp, fontWeight = FontWeight.Black, color = NeonCyan, style = TextStyle(shadow = Shadow(color = NeonCyan, blurRadius = 15f)))
+                
+                Spacer(modifier = Modifier.height(35.dp))
+                
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl))
+                        context.startActivity(intent)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, LiquidGold), modifier = Modifier.fillMaxWidth().height(55.dp), shape = RoundedCornerShape(20.dp)
+                ) { Text("سياسة الخصوصية 📜", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+                
+                Spacer(modifier = Modifier.height(15.dp))
+                
+                Button(
+                    onClick = { showSettingsDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = LiquidGold.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, LiquidGold), modifier = Modifier.fillMaxWidth().height(55.dp), shape = RoundedCornerShape(20.dp)
+                ) { Text("إغلاق", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) }
             }
         }
     }
@@ -263,4 +271,3 @@ fun LevelNodeCustom(
         )
     }
 }
-
