@@ -23,7 +23,18 @@ fun MindClashNavGraph(adManager: AdManager) {
         }
 
         composable("home") {
-            HomeScreen(onNavigateToGame = { level -> navController.navigate("game/$level") })
+            HomeScreen(
+                onNavigateToGame = { level -> navController.navigate("game/$level") },
+                onNavigateToStore = { navController.navigate("store") } // ✨ السطر السحري الجديد
+            )
+        }
+
+        // ✨ مسار شاشة السوق السوداء وعجلة الحظ
+        composable("store") {
+            StoreScreen(
+                adManager = adManager,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(route = "game/{level}", arguments = listOf(navArgument("level") { type = NavType.IntType })) { backStackEntry ->
