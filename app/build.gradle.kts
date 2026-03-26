@@ -74,7 +74,11 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
-    
+        // 🎬 مشغل الفيديو السينمائي (Media3 ExoPlayer) - أحدث نسخة مستقرة 2026
+    implementation("androidx.media3:media3-exoplayer:1.5.0")
+    implementation("androidx.media3:media3-ui:1.5.0")
+    implementation("androidx.media3:media3-common:1.5.0")
+
     // 💉 حقن الاعتمادات (Hilt)
     implementation("com.google.dagger:hilt-android:2.51.1")
     ksp("com.google.dagger:hilt-compiler:2.51.1")
