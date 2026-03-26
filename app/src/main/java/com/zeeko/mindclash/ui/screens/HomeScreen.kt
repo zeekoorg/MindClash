@@ -43,7 +43,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
+fun HomeScreen(
+    onNavigateToGame: (Int) -> Unit,
+    onNavigateToStore: () -> Unit // ✨ الإضافة الجديدة للمتجر
+) {
     val context = LocalContext.current
     val progressRepo = remember { UserProgressRepository(context) }
     
@@ -86,7 +89,7 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 100.dp, bottom = 50.dp, start = 30.dp, end = 30.dp), 
+            contentPadding = PaddingValues(top = 120.dp, bottom = 50.dp, start = 30.dp, end = 30.dp), 
             verticalArrangement = Arrangement.spacedBy(45.dp)
         ) {
             itemsIndexed((1..totalLevels).reversed().toList()) { index, levelNum ->
@@ -103,7 +106,19 @@ fun HomeScreen(onNavigateToGame: (Int) -> Unit) {
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 40.dp, end = 20.dp).align(Alignment.TopEnd)) {
+        // ✨ أزرار الشاشة العلوية (المتجر والإعدادات)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 20.dp, end = 20.dp).align(Alignment.TopCenter),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // زر المتجر (الذهبي)
+            IconButton(
+                onClick = { AudioPlayer.playClick(); onNavigateToStore() },
+                modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, LiquidGold, CircleShape).size(55.dp)
+            ) { Text("🛒", fontSize = 26.sp) }
+
+            // زر الإعدادات (السماوي)
             IconButton(
                 onClick = { AudioPlayer.playClick(); showSettingsDialog = true },
                 modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, NeonCyan, CircleShape).size(55.dp)
