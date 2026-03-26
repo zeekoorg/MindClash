@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.zeeko.mindclash.AudioPlayer
 import com.zeeko.mindclash.R
 import com.zeeko.mindclash.ads.AdManager
 import com.zeeko.mindclash.ui.game.GameViewModel
@@ -83,6 +84,20 @@ fun GameScreen(
         }
     }
 
+    // --- مراقبة الأحداث لتشغيل الأصوات المناسبة ---
+    LaunchedEffect(state.showCorrectAnimation) {
+        if (state.showCorrectAnimation) AudioPlayer.playCorrect()
+    }
+    LaunchedEffect(state.showWrongAnimation) {
+        if (state.showWrongAnimation) AudioPlayer.playWrong()
+    }
+    LaunchedEffect(state.isLevelComplete) {
+        if (state.isLevelComplete) AudioPlayer.playWin()
+    }
+    LaunchedEffect(state.isGameOver) {
+        if (state.isGameOver) AudioPlayer.playLose()
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         
         Image(
@@ -110,7 +125,11 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null
-                    ) { adDialogType = "coins"; showAdDialog = true }
+                    ) { 
+                        AudioPlayer.playClick()
+                        adDialogType = "coins"
+                        showAdDialog = true 
+                    }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_coin_custom), contentDescription = "Coins", modifier = Modifier.size(60.dp))
                     Text(text = state.score.toString(), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 10f)))
@@ -122,7 +141,11 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null
-                    ) { adDialogType = "hearts"; showAdDialog = true }
+                    ) { 
+                        AudioPlayer.playClick()
+                        adDialogType = "hearts"
+                        showAdDialog = true 
+                    }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_heart_custom), contentDescription = "Hearts", modifier = Modifier.size(60.dp))
                     Text(text = state.lives.toString(), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 10f)))
@@ -220,7 +243,10 @@ fun GameScreen(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyHint() else { adDialogType = "hint"; showAdDialog = true } }
+                    modifier = Modifier.clickable { 
+                        AudioPlayer.playClick()
+                        if (state.score >= 50) viewModel.buyHint() else { adDialogType = "hint"; showAdDialog = true } 
+                    }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_hint), contentDescription = "Hint", modifier = Modifier.size(70.dp).padding(5.dp))
                     Text("💡 تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -228,7 +254,10 @@ fun GameScreen(
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyRevealLetter() else { adDialogType = "letter"; showAdDialog = true } }
+                    modifier = Modifier.clickable { 
+                        AudioPlayer.playClick()
+                        if (state.score >= 50) viewModel.buyRevealLetter() else { adDialogType = "letter"; showAdDialog = true } 
+                    }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_reveal), contentDescription = "Reveal", modifier = Modifier.size(70.dp).padding(5.dp))
                     Text("🔍 كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -257,6 +286,7 @@ fun GameScreen(
                     Text(text = dialogMessage, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center, lineHeight = 28.sp)
                     Spacer(modifier = Modifier.height(30.dp))
                     Button(onClick = {
+                        AudioPlayer.playClick()
                         showAdDialog = false
                         adManager.showRewardedAd(
                             activity = context,
@@ -274,7 +304,7 @@ fun GameScreen(
                         Text("مشاهدة إعلان 📺", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    Button(onClick = { showAdDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
+                    Button(onClick = { AudioPlayer.playClick(); showAdDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
                         Text("إلغاء", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -285,23 +315,47 @@ fun GameScreen(
         AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlayCustom() }
         AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlayCustom() }
         
-        // نافذة الفوز
         AnimatedVisibility(visible = state.isLevelComplete, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) { 
-            LegendaryResultOverlayCustom(title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ➡", buttonColor = NeonCyan, 
-                onClick = { adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) } }, 
-                onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
+            LegendaryResultOverlayCustom(
+                title = "انتصار كاسح! 🎉", 
+                message = "تم تدمير أسرار المستوى ${state.currentLevel}!", 
+                score = state.score, 
+                isWin = true, 
+                buttonText = "اقتحم المستوى التالي ➡", 
+                buttonColor = NeonCyan, 
+                onClick = { 
+                    AudioPlayer.playClick()
+                    adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) } 
+                }, 
+                onGoHome = { 
+                    AudioPlayer.playClick()
+                    adManager.showInterstitialAd(context) { onNavigateBack() } 
+                }
+            ) 
         }
         
-        // نافذة الخسارة (تم تعديل onGoHome لتكون بدون إعلان)
         AnimatedVisibility(visible = state.isGameOver, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) { 
-            LegendaryResultOverlayCustom(title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "انتقام (إعادة) 🔄", buttonColor = CrimsonRed, 
-                onClick = { adManager.showInterstitialAd(context) { viewModel.resetGame() } }, 
-                onGoHome = { onNavigateBack() }) // <--- هنا التعديل السحري
+            LegendaryResultOverlayCustom(
+                title = "سقطت العقول! 💀", 
+                message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", 
+                score = state.score, 
+                isWin = false, 
+                buttonText = "انتقام (إعادة) 🔄", 
+                buttonColor = CrimsonRed, 
+                onClick = { 
+                    AudioPlayer.playClick()
+                    adManager.showInterstitialAd(context) { viewModel.resetGame() } 
+                }, 
+                onGoHome = { 
+                    AudioPlayer.playClick()
+                    onNavigateBack() 
+                }
+            ) 
         }
     }
 }
 
-// مكونات المؤثرات السفلية
+// مكونات المؤثرات السفلية والعلوية
 @Composable
 fun NeoCorrectOverlayCustom() {
     var scale by remember { mutableStateOf(0f) }
