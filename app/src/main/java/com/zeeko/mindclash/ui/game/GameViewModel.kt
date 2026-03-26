@@ -84,10 +84,14 @@ class GameViewModel @Inject constructor(
         )
     }
 
+    // هذه الدالة الجديدة ستستدعيها الشاشة عند الخروج منها لحفظ التقدم الإجباري
+    fun forceSaveState() {
+        persistCurrentState()
+    }
+
     fun onNativeKeyboardInput(text: String) {
         val answer = _state.value.currentQuestion?.answer ?: return
-        // تنظيف النص من أي مسافات زائدة أو نزول سطر يفسد الإجابة
-        val cleanText = text.replace("\n", "")
+        val cleanText = text.replace("\n", "") 
         
         if (cleanText.length <= answer.length) {
             _state.update { it.copy(userAnswer = cleanText) }
@@ -142,7 +146,6 @@ class GameViewModel @Inject constructor(
         val currentState = _state.value
         val currentQuestion = currentState.currentQuestion ?: return
 
-        // التحقق الدقيق من التطابق
         if (userAnswer == currentQuestion.answer) {
             progressRepository.addCoins(5) 
             _state.update { it.copy(score = progressRepository.getTotalCoins(), showCorrectAnimation = true) }
@@ -165,7 +168,10 @@ class GameViewModel @Inject constructor(
     private fun nextQuestion() {
         val currentState = _state.value
         if (currentState.currentQuestionIndex < currentState.questions.size - 1) {
+            // تفريغ الإجابة والانتقال للسؤال التالي
             _state.update { it.copy(currentQuestionIndex = it.currentQuestionIndex + 1, userAnswer = "", isHintVisible = false) }
+            // حفظ التقدم فوراً بمجرد الانتقال للسؤال الجديد (السر هنا!)
+            persistCurrentState() 
         } else {
             progressRepository.unlockNextLevel(currentState.currentLevel)
             progressRepository.clearGameState()
