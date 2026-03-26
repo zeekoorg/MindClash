@@ -62,21 +62,25 @@ fun GameScreen(
     var showAdDialog by remember { mutableStateOf(false) }
     var adDialogType by remember { mutableStateOf("") } 
 
-    // --- 🔑 الحل السحري لمشكلة المؤشر (Cursor) ---
     var textFieldValue by remember { mutableStateOf(TextFieldValue(state.userAnswer)) }
 
-    // هذا الكود يراقب أي تحديث للإجابة (مثل كشف حرف) ويجبر المؤشر على الذهاب للنهاية
     LaunchedEffect(state.userAnswer) {
         if (textFieldValue.text != state.userAnswer) {
             textFieldValue = TextFieldValue(
                 text = state.userAnswer,
-                selection = TextRange(state.userAnswer.length) // إجبار المؤشر للبقاء في النهاية
+                selection = TextRange(state.userAnswer.length)
             )
         }
     }
 
     LaunchedEffect(Unit) {
         viewModel.loadLevel(level)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.forceSaveState() 
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -97,7 +101,6 @@ fun GameScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // العملات والقلوب واللوجو
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -128,7 +131,6 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // حاوية السؤال
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth().height(220.dp)
@@ -139,14 +141,13 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // كود ظهور التلميح
             AnimatedVisibility(
                 visible = state.isHintVisible,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Text(
-                    text = " تلميح: ${state.currentQuestion?.hint ?: "لا يوجد تلميح"}",
+                    text = "💡 تلميح: ${state.currentQuestion?.hint ?: "لا يوجد تلميح"}",
                     color = LiquidGold,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -155,17 +156,15 @@ fun GameScreen(
                 )
             }
 
-            // التعرف الذكي على لغة الإجابة لتعديل اتجاه المربعات
             val currentAnswer = state.currentQuestion?.answer ?: ""
             val isArabicAnswer = currentAnswer.any { it in '\u0600'..'\u06FF' }
             val layoutDirection = if (isArabicAnswer) LayoutDirection.Rtl else LayoutDirection.Ltr
 
-            // حقل النص المحدث لحل مشكلة المؤشر
             BasicTextField(
                 value = textFieldValue,
                 onValueChange = { newValue ->
                     val answerLength = state.currentQuestion?.answer?.length ?: 0
-                    val cleanText = newValue.text.replace("\n", "") // منع نزول السطر
+                    val cleanText = newValue.text.replace("\n", "") 
                     if (cleanText.length <= answerLength) {
                         textFieldValue = newValue.copy(text = cleanText)
                         viewModel.onNativeKeyboardInput(cleanText)
@@ -175,7 +174,6 @@ fun GameScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
 
-            // تطبيق الاتجاه الذكي على المربعات
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 FlowRow(
                     modifier = Modifier
@@ -215,7 +213,6 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // أزرار المساعدة السفلية
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 25.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -226,7 +223,7 @@ fun GameScreen(
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyHint() else { adDialogType = "hint"; showAdDialog = true } }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_hint), contentDescription = "Hint", modifier = Modifier.size(70.dp).padding(5.dp))
-                    Text("تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("💡 تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
                 Column(
@@ -234,13 +231,13 @@ fun GameScreen(
                     modifier = Modifier.clickable { if (state.score >= 50) viewModel.buyRevealLetter() else { adDialogType = "letter"; showAdDialog = true } }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_reveal), contentDescription = "Reveal", modifier = Modifier.size(70.dp).padding(5.dp))
-                    Text("كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("🔍 كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // نافذة الإعلانات
+        // النوافذ
         if (showAdDialog) {
             val dialogTitle = when (adDialogType) { "coins" -> "عملات مجانية!"; "hearts" -> "قلوب إضافية!"; else -> "رصيد غير كافٍ!" }
             val dialogMessage = when (adDialogType) {
@@ -274,7 +271,7 @@ fun GameScreen(
                             onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز حالياً", Toast.LENGTH_SHORT).show() }
                         )
                     }, colors = ButtonDefaults.buttonColors(containerColor = mainColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, mainColor), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
-                        Text("مشاهدة إعلان ", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("مشاهدة إعلان 📺", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(15.dp))
                     Button(onClick = { showAdDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
@@ -287,11 +284,19 @@ fun GameScreen(
         // المؤثرات
         AnimatedVisibility(visible = state.showCorrectAnimation, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlayCustom() }
         AnimatedVisibility(visible = state.showWrongAnimation, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlayCustom() }
+        
+        // نافذة الفوز
         AnimatedVisibility(visible = state.isLevelComplete, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) { 
-            LegendaryResultOverlayCustom(title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ", buttonColor = NeonCyan, onClick = { adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) } }, onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
+            LegendaryResultOverlayCustom(title = "انتصار كاسح! 🎉", message = "تم تدمير أسرار المستوى ${state.currentLevel}!", score = state.score, isWin = true, buttonText = "اقتحم المستوى التالي ➡", buttonColor = NeonCyan, 
+                onClick = { adManager.showInterstitialAd(context) { viewModel.loadLevel(state.currentLevel + 1) } }, 
+                onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
         }
+        
+        // نافذة الخسارة (تم تعديل onGoHome لتكون بدون إعلان)
         AnimatedVisibility(visible = state.isGameOver, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) { 
-            LegendaryResultOverlayCustom(title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "إعادة", buttonColor = CrimsonRed, onClick = { adManager.showInterstitialAd(context) { viewModel.resetGame() } }, onGoHome = { adManager.showInterstitialAd(context) { onNavigateBack() } }) 
+            LegendaryResultOverlayCustom(title = "سقطت العقول! 💀", message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", score = state.score, isWin = false, buttonText = "انتقام (إعادة) 🔄", buttonColor = CrimsonRed, 
+                onClick = { adManager.showInterstitialAd(context) { viewModel.resetGame() } }, 
+                onGoHome = { onNavigateBack() }) // <--- هنا التعديل السحري
         }
     }
 }
@@ -304,8 +309,18 @@ fun NeoCorrectOverlayCustom() {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     glowAlpha = infiniteTransition.animateFloat(initialValue = 0.4f, targetValue = 0.8f, animationSpec = infiniteRepeatable(animation = tween(400, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse), label = "").value
     LaunchedEffect(Unit) { scale = 1.2f; delay(600); scale = 0f }
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF00FF7F).copy(alpha = 0.4f * glowAlpha)).alpha(scale), contentAlignment = Alignment.Center) {
-        Image(painter = painterResource(id = R.drawable.ic_status_correct), contentDescription = "Correct", modifier = Modifier.fillMaxWidth(0.6f).aspectRatio(1f).scale(scale))
+    
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF00FF7F).copy(alpha = 0.4f * glowAlpha)).alpha(scale)) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_status_correct), 
+            contentDescription = "Correct", 
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .aspectRatio(1f)
+                .align(Alignment.TopCenter)
+                .padding(top = 130.dp) 
+                .scale(scale)
+        )
     }
 }
 
@@ -314,8 +329,19 @@ fun NeoWrongOverlayCustom() {
     var scale by remember { mutableStateOf(0f) }
     var shake by remember { mutableStateOf(0f) }
     LaunchedEffect(Unit) { scale = 1.2f; shake = 15f; delay(100); shake = -15f; delay(100); shake = 10f; delay(100); shake = 0f; delay(400); scale = 0f }
-    Box(modifier = Modifier.fillMaxSize().background(CrimsonRed.copy(alpha = 0.4f)).alpha(scale), contentAlignment = Alignment.Center) {
-        Image(painter = painterResource(id = R.drawable.ic_status_wrong), contentDescription = "Wrong", modifier = Modifier.fillMaxWidth(0.6f).aspectRatio(1f).scale(scale).then(Modifier.offset(x = shake.dp)))
+    
+    Box(modifier = Modifier.fillMaxSize().background(CrimsonRed.copy(alpha = 0.4f)).alpha(scale)) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_status_wrong), 
+            contentDescription = "Wrong", 
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .aspectRatio(1f)
+                .align(Alignment.TopCenter)
+                .padding(top = 130.dp) 
+                .scale(scale)
+                .then(Modifier.offset(x = shake.dp))
+        )
     }
 }
 
