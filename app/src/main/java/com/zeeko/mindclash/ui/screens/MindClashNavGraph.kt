@@ -12,12 +12,10 @@ import com.zeeko.mindclash.ads.AdManager
 fun MindClashNavGraph(adManager: AdManager) {
     val navController = rememberNavController()
 
-    // نقطة البداية أصبحت شاشة الفيديو (splash)
     NavHost(navController = navController, startDestination = "splash") {
         
         composable("splash") {
             SplashScreen(onNavigateToHome = {
-                // مسح شاشة الفيديو من الذاكرة لكي لا يعود لها عند ضغط زر الرجوع
                 navController.navigate("home") { popUpTo("splash") { inclusive = true } }
             })
         }
@@ -25,25 +23,25 @@ fun MindClashNavGraph(adManager: AdManager) {
         composable("home") {
             HomeScreen(
                 onNavigateToGame = { level -> navController.navigate("game/$level") },
-                onNavigateToStore = { navController.navigate("store") } // ✨ السطر السحري الجديد
+                onNavigateToStore = { navController.navigate("store") },
+                onNavigateToSurvival = { navController.navigate("survival") } // ✨ هنا حل الخطأ الأول!
             )
         }
 
-        // ✨ مسار شاشة السوق السوداء وعجلة الحظ
         composable("store") {
             StoreScreen(
                 adManager = adManager,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-                // مسار طور النجاة (التحدي بالزمن)
+
+        // مسار طور النجاة (التحدي بالزمن)
         composable("survival") {
             SurvivalScreen(
                 adManager = adManager,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-
 
         composable(route = "game/{level}", arguments = listOf(navArgument("level") { type = NavType.IntType })) { backStackEntry ->
             val level = backStackEntry.arguments?.getInt("level") ?: 1
