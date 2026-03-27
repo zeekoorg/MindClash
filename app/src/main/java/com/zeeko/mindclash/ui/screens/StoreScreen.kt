@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -28,7 +30,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zeeko.mindclash.AudioPlayer
@@ -111,10 +112,9 @@ fun StoreScreen(
                 Text(text = "جرب حظك واربح جوائز ضخمة!", color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(bottom = 20.dp))
 
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.size(250.dp)) {
-                    // خلفية العجلة (تخيلها دائرة مقسمة)
+                    // خلفية العجلة
                     Box(modifier = Modifier.fillMaxSize().rotate(animatedRotation).clip(CircleShape).background(Color.White.copy(alpha = 0.1f)).border(4.dp, NeonCyan, CircleShape), contentAlignment = Alignment.Center) {
                         Image(painter = painterResource(id = R.drawable.logo_game), contentDescription = "Wheel Core", modifier = Modifier.size(100.dp).alpha(0.5f))
-                        // يمكنك لاحقاً تصميم صورة لعجلة مقسمة لألوان وتضعها هنا بدلاً من الـ Box
                     }
                     
                     // المؤشر (السهم)
@@ -139,7 +139,7 @@ fun StoreScreen(
                                     delay(4000) // انتظار انتهاء الأنيميشن
                                     AudioPlayer.playWin()
                                     
-                                    // تحديد الجائزة برمجياً (بشكل عشوائي)
+                                    // تحديد الجائزة برمجياً
                                     val prize = (1..100).random()
                                     when {
                                         prize <= 50 -> { addCoins(50); Toast.makeText(context, "ربحت 50 عملة! 🪙", Toast.LENGTH_SHORT).show() }
@@ -204,4 +204,3 @@ fun StoreItemCustom(title: String, description: String, buttonText: String, butt
         }
     }
 }
-
