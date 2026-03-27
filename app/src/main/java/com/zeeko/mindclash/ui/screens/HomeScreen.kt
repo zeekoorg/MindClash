@@ -68,30 +68,37 @@ fun HomeScreen(
     var unlockedLevel by remember { mutableIntStateOf(progressRepo.getUnlockedLevel()) }
     val totalLevels = 50
 
+    val isStoreUnlocked = unlockedLevel >= 3
+    val isSurvivalUnlocked = unlockedLevel >= 5
+
+    // ✨ جلب الرصيد اللحظي للقلوب والعملات لعرضها في الشاشة الرئيسية
+    var currentCoins by remember { mutableIntStateOf(sharedPreferences.getInt("Coins", 0)) }
+    var currentLives by remember { mutableIntStateOf(sharedPreferences.getInt("Lives", 5)) }
+
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var backPressedOnce by remember { mutableStateOf(false) }
 
-    // ✨ متغيرات نظام المكافأة اليومية
-    val currentDayIndex = (System.currentTimeMillis() / 86400000L).toInt() // رقم اليوم عالمياً
+    val currentDayIndex = (System.currentTimeMillis() / 86400000L).toInt()
     val lastClaimDay = sharedPreferences.getInt("LastClaimDay", 0)
     var currentStreak by remember { mutableIntStateOf(sharedPreferences.getInt("CurrentStreak", 0)) }
     var showDailyRewardDialog by remember { mutableStateOf(false) }
 
-    // ✨ التحقق من المكافأة عند فتح الشاشة
+    // ✨ تحديث الرصيد والمستوى كل مرة تظهر فيها الشاشة (عند العودة من المتجر أو اللعب)
     LaunchedEffect(Unit) {
         unlockedLevel = progressRepo.getUnlockedLevel()
+        currentCoins = sharedPreferences.getInt("Coins", 0)
+        currentLives = sharedPreferences.getInt("Lives", 5)
+        
         val targetIndex = totalLevels - unlockedLevel
         if (targetIndex >= 0) listState.animateScrollToItem(targetIndex)
 
-        // هندسة التتابع اليومي
         if (currentDayIndex > lastClaimDay) {
-            // إذا غاب لأكثر من يوم، يعود لليوم الأول
             if (currentDayIndex > lastClaimDay + 1 && lastClaimDay != 0) {
                 currentStreak = 0
                 sharedPreferences.edit().putInt("CurrentStreak", 0).apply()
             }
-            showDailyRewardDialog = true // إظهار النافذة إذا كان هناك مكافأة اليوم
+            showDailyRewardDialog = true 
         }
     }
 
@@ -128,22 +135,56 @@ fun HomeScreen(
             }
         }
 
+        // ✨ --- الشريط العلوي المُرتب الجديد (إعدادات، متجر، عملات، قلوب) ---
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 20.dp, end = 20.dp).align(Alignment.TopCenter),
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 15.dp, end = 15.dp).align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = { AudioPlayer.playClick(); onNavigateToStore() },
-                modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, LiquidGold, CircleShape).size(55.dp)
-            ) { Text("🛒", fontSize = 26.sp) }
+            // مجموعة الأزرار (الإعدادات والمتجر)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // زر الإعدادات
+                IconButton(
+                    onClick = { AudioPlayer.playClick(); showSettingsDialog = true },
+                    modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, NeonCyan, CircleShape).size(45.dp)
+                ) { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", tint = NeonCyan, modifier = Modifier.size(24.dp)) }
 
-            IconButton(
-                onClick = { AudioPlayer.playClick(); showSettingsDialog = true },
-                modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, NeonCyan, CircleShape).size(55.dp)
-            ) { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", tint = NeonCyan, modifier = Modifier.size(30.dp)) }
+                // زر المتجر (مربوط بنظام القفل)
+                IconButton(
+                    onClick = { 
+                        AudioPlayer.playClick()
+                        if (isStoreUnlocked) onNavigateToStore()
+                        else Toast.makeText(context, "السوق السوداء تُفتح عند الوصول للمستوى 3 🔒", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(VoidBlack.copy(alpha = 0.8f))
+                        .border(2.dp, if (isStoreUnlocked) LiquidGold else Color.Gray, CircleShape)
+                        .size(45.dp)
+                ) { 
+                    Text(if (isStoreUnlocked) "🛒" else "🔒", fontSize = 20.sp) 
+                }
+            }
+
+            // مجموعة الرصيد (العملات والقلوب)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // صندوق العملات
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, LiquidGold, RoundedCornerShape(20.dp)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Text(text = "$currentCoins", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Image(painter = painterResource(id = R.drawable.ic_coin_custom), contentDescription = "Coins", modifier = Modifier.size(20.dp))
+                }
+                
+                // صندوق القلوب
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, CrimsonRed, RoundedCornerShape(20.dp)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Text(text = "$currentLives", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Image(painter = painterResource(id = R.drawable.ic_heart_custom), contentDescription = "Hearts", modifier = Modifier.size(20.dp))
+                }
+            }
         }
 
+        // --- زر صراع الزمن ---
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -152,22 +193,37 @@ fun HomeScreen(
                 .height(90.dp)
                 .clip(RoundedCornerShape(25.dp))
                 .background(VoidBlack.copy(alpha = 0.95f))
-                .border(2.dp, CrimsonRed, RoundedCornerShape(25.dp))
-                .clickable { AudioPlayer.playClick(); onNavigateToSurvival() }, 
+                .border(2.dp, if (isSurvivalUnlocked) CrimsonRed else Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(25.dp))
+                .clickable { 
+                    AudioPlayer.playClick()
+                    if (isSurvivalUnlocked) onNavigateToSurvival()
+                    else Toast.makeText(context, "تحدي النجاة يُفتح عند الوصول للمستوى 5 🔒", Toast.LENGTH_SHORT).show()
+                }, 
             contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                Text("⏳", fontSize = 40.sp)
+                Text(if (isSurvivalUnlocked) "⏳" else "🔒", fontSize = 40.sp)
                 Spacer(modifier = Modifier.width(15.dp))
                 Column {
-                    Text("صراع الزمن", fontSize = 24.sp, fontWeight = FontWeight.Black, color = CrimsonRed, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 15f)))
-                    Text("تحدي النجاة اللانهائي!", fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "صراع الزمن", 
+                        fontSize = 24.sp, 
+                        fontWeight = FontWeight.Black, 
+                        color = if (isSurvivalUnlocked) CrimsonRed else Color.Gray, 
+                        style = TextStyle(shadow = Shadow(color = if (isSurvivalUnlocked) CrimsonRed else Color.Transparent, blurRadius = 15f))
+                    )
+                    
+                    if (isSurvivalUnlocked) {
+                        Text("تحدي النجاة اللانهائي!", fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    } else {
+                        Text("يُفتح عند الوصول للمستوى 5", fontSize = 14.sp, color = CrimsonRed, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
     }
 
-    // ✨ شاشة المكافآت اليومية الفخمة
+    // --- نوافذ الحوار (نفسها تماماً بدون تغيير) ---
     if (showDailyRewardDialog) {
         Dialog(
             onDismissRequest = { /* إجبار اللاعب على الضغط على زر الاستلام */ },
@@ -180,13 +236,11 @@ fun HomeScreen(
                     Text("ادخل كل يوم لتصل للجائزة الكبرى!", fontSize = 14.sp, color = Color.White)
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // ترتيب الأيام السبعة
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // تعريف جوائز الأيام
                         val rewards = listOf(
                             Pair("يوم 1", Pair(50, 0)), Pair("يوم 2", Pair(100, 0)),
                             Pair("يوم 3", Pair(0, 1)), Pair("يوم 4", Pair(150, 0)),
@@ -204,7 +258,6 @@ fun HomeScreen(
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    // اليوم السابع (الجائزة الكبرى)
                     DailyRewardItem(
                         title = "اليوم السابع (الكنز) 💎", coins = 500, lives = 3,
                         isPast = 6 < currentStreak, isToday = 6 == currentStreak, isEpic = true, modifier = Modifier.fillMaxWidth().height(80.dp)
@@ -224,6 +277,10 @@ fun HomeScreen(
                                 putInt("LastClaimDay", currentDayIndex)
                                 putInt("CurrentStreak", if (currentStreak >= 6) 0 else currentStreak + 1)
                             }.apply()
+                            
+                            // تحديث الرصيد اللحظي في الشاشة
+                            currentCoins += coinsToGive
+                            currentLives += livesToGive
 
                             Toast.makeText(context, "تم استلام المكافأة بنجاح! 🎉", Toast.LENGTH_SHORT).show()
                             showDailyRewardDialog = false
@@ -241,7 +298,6 @@ fun HomeScreen(
     }
 
     if (!hasAgreedToPrivacy) {
-        // ... نفس الكود الخاص بسياسة الخصوصية
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.95f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
             Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, NeonCyan, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "سياسة الخصوصية", fontSize = 28.sp, fontWeight = FontWeight.Black, color = NeonCyan)
@@ -256,7 +312,6 @@ fun HomeScreen(
     }
 
     if (showSettingsDialog) {
-        // ... نفس الكود الخاص بالإعدادات
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
             Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, LiquidGold, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "الإعدادات", fontSize = 28.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
@@ -282,7 +337,6 @@ fun HomeScreen(
     }
 }
 
-// ✨ تصميم عنصر المكافأة (الصناديق الصغيرة)
 @Composable
 fun DailyRewardItem(title: String, coins: Int, lives: Int, isPast: Boolean, isToday: Boolean, isEpic: Boolean, modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition()
@@ -340,7 +394,6 @@ fun DailyRewardItem(title: String, coins: Int, lives: Int, isPast: Boolean, isTo
 
 @Composable
 fun LevelNodeCustom(levelNumber: Int, isUnlocked: Boolean, isCurrent: Boolean, onClick: () -> Unit) {
-    // ... احتفظ بها كما هي بدون تغيير ...
     var pulseScale by remember { mutableStateOf(1f) }
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     pulseScale = infiniteTransition.animateFloat(initialValue = 1f, targetValue = if (isCurrent) 1.15f else 1f, animationSpec = infiniteRepeatable(animation = tween(800, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse), label = "pulse_anim").value
