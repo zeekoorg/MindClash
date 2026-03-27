@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,8 +32,12 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.zeeko.mindclash.AudioPlayer
@@ -74,50 +80,102 @@ fun StoreScreen(
     var isSpinning by remember { mutableStateOf(false) }
     var rotationAngle by remember { mutableFloatStateOf(0f) }
     
-    // ✨ المتغيرات التي تخزن حالة "انتظار إغلاق الإعلان"
     var pendingWheelSpin by remember { mutableStateOf(false) }
     var pendingCoinsReward by remember { mutableStateOf(false) }
 
+    // ✨ متغيرات شاشة الاحتفال (Win Dialog)
+    var showWinDialog by remember { mutableStateOf(false) }
+    var wonPrizeText by remember { mutableStateOf("") }
+    var wonPrizeIcon by remember { mutableIntStateOf(R.drawable.ic_coin_custom) }
+    var dialogColor by remember { mutableStateOf(LiquidGold) }
+
     val animatedRotation by animateFloatAsState(
         targetValue = rotationAngle,
-        animationSpec = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 5000, easing = FastOutSlowInEasing),
         label = "spin"
     )
 
-    // ✨ المراقب الذكي: يراقب متى يغلق الإعلان وتعود شاشة اللعبة للظهور (ON_RESUME)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // إذا تم إغلاق الإعلان وكانت لفة العجلة معلقة، ابدأ اللف الآن!
                 if (pendingWheelSpin) {
                     pendingWheelSpin = false
                     isSpinning = true
                     scope.launch {
-                        delay(500) // تأخير بسيط جداً لترتاح العين بعد إغلاق الإعلان
-                        val randomSpins = (3..6).random() * 360f
-                        val randomStopAngle = (0..360).random().toFloat()
-                        rotationAngle += randomSpins + randomStopAngle
+                        delay(500) 
                         
-                        delay(4000)
+                        // ✨ 1. تحديد الجائزة بالاحتمالات الدقيقة والصعبة
+                        val prizeChance = (1..100).random()
+                        val prizeType: Int
+                        val targetStopAngle: Float
+                        
+                        when {
+                            prizeChance <= 50 -> { // 50% فرصة
+                                prizeType = 50
+                                targetStopAngle = 0f 
+                            }
+                            prizeChance <= 83 -> { // 33% فرصة
+                                prizeType = 2 
+                                targetStopAngle = 270f 
+                            }
+                            prizeChance <= 98 -> { // 15% فرصة
+                                prizeType = 150 
+                                targetStopAngle = 180f 
+                            }
+                            else -> { // ✨ 2% فرصة فقط للجائزة الكبرى!
+                                prizeType = 500 
+                                targetStopAngle = 90f 
+                            }
+                        }
+
+                        val fullSpins = 5 * 360f 
+                        rotationAngle += (fullSpins + targetStopAngle)
+                        
+                        delay(5000) 
                         AudioPlayer.playWin()
                         
-                        val prize = (1..100).random()
-                        when {
-                            prize <= 50 -> { addCoins(50); Toast.makeText(context, "ربحت 50 عملة!", Toast.LENGTH_SHORT).show() }
-                            prize <= 80 -> { addLives(2); Toast.makeText(context, "ربحت قلبين!", Toast.LENGTH_SHORT).show() }
-                            prize <= 95 -> { addCoins(150); Toast.makeText(context, "الجائزة الفضية: 150 عملة!", Toast.LENGTH_LONG).show() }
-                            else -> { addCoins(500); Toast.makeText(context, "الجائزة الكبرى: 500 عملة!", Toast.LENGTH_LONG).show() }
+                        // ✨ 2. إعطاء الجائزة وتجهيز شاشة الاحتفال
+                        when (prizeType) {
+                            50 -> { 
+                                addCoins(50)
+                                wonPrizeText = "50 عملة ذهبية!"
+                                wonPrizeIcon = R.drawable.ic_coin_custom
+                                dialogColor = LiquidGold
+                            }
+                            2 -> { 
+                                addLives(2)
+                                wonPrizeText = "قلبين حياة إضافية! ❤️❤️"
+                                wonPrizeIcon = R.drawable.ic_heart_custom
+                                dialogColor = CrimsonRed
+                            }
+                            150 -> { 
+                                addCoins(150)
+                                wonPrizeText = "150 عملة ذهبية! 🌟"
+                                wonPrizeIcon = R.drawable.ic_coin_custom
+                                dialogColor = LiquidGold
+                            }
+                            500 -> { 
+                                addCoins(500)
+                                wonPrizeText = "الجائزة الكبرى!\n500 عملة ذهبية! 🎉💎"
+                                wonPrizeIcon = R.drawable.ic_coin_custom
+                                dialogColor = NeonCyan // نيون لتمييز الجائزة الكبرى
+                            }
                         }
+                        
+                        rotationAngle %= 360f
                         isSpinning = false
+                        showWinDialog = true // إظهار الدايلوج الفخم
                     }
                 }
                 
-                // إذا تم إغلاق الإعلان وكانت جائزة الـ 100 عملة معلقة، أعطه إياها الآن!
                 if (pendingCoinsReward) {
                     pendingCoinsReward = false
                     addCoins(100)
+                    wonPrizeText = "100 عملة ذهبية!"
+                    wonPrizeIcon = R.drawable.ic_coin_custom
+                    dialogColor = LiquidGold
+                    showWinDialog = true // استخدام نفس الدايلوج للمتجر
                     AudioPlayer.playWin()
-                    Toast.makeText(context, "تمت إضافة 100 عملة!", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -155,11 +213,19 @@ fun StoreScreen(
                 Text(text = "عجلة المصير 🎡", fontSize = 32.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
                 Text(text = "جرب حظك واربح جوائز ضخمة!", color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(bottom = 20.dp))
 
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(250.dp)) {
-                    Box(modifier = Modifier.fillMaxSize().rotate(animatedRotation).clip(CircleShape).background(Color.White.copy(alpha = 0.1f)).border(4.dp, NeonCyan, CircleShape), contentAlignment = Alignment.Center) {
-                        Image(painter = painterResource(id = R.drawable.logo_game), contentDescription = "Wheel Core", modifier = Modifier.size(100.dp).alpha(0.5f))
-                    }
-                    Icon(painter = painterResource(id = R.drawable.ic_status_wrong), contentDescription = "Pointer", tint = CrimsonRed, modifier = Modifier.align(Alignment.TopCenter).offset(y = (-15).dp).size(40.dp).rotate(180f))
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(260.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.wheel_asset), 
+                        contentDescription = "Wheel",
+                        modifier = Modifier.fillMaxSize().padding(15.dp).rotate(animatedRotation) 
+                    )
+                    
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown, 
+                        contentDescription = "Pointer", 
+                        tint = CrimsonRed, 
+                        modifier = Modifier.align(Alignment.TopCenter).offset(y = (-5).dp).size(60.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -170,10 +236,7 @@ fun StoreScreen(
                         AudioPlayer.playClick()
                         adManager.showRewardedAd(
                             activity = context,
-                            onRewardEarned = {
-                                // ✨ هنا نسجل أن اللاعب استحق المكافأة، لكن لن نلف العجلة إلا بعد إغلاق الإعلان (ON_RESUME)
-                                pendingWheelSpin = true
-                            },
+                            onRewardEarned = { pendingWheelSpin = true },
                             onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، حاول بعد قليل", Toast.LENGTH_SHORT).show() }
                         )
                     },
@@ -204,12 +267,120 @@ fun StoreScreen(
                     title = "جرعة الحياة", description = "اشترِ 5 قلوب باستخدام عملاتك", buttonText = "بـ 200 عملة", buttonColor = CrimsonRed, buttonIcon = R.drawable.ic_heart_custom,
                     onClick = {
                         AudioPlayer.playClick()
-                        if (spendCoins(200)) { addLives(5); AudioPlayer.playWin(); Toast.makeText(context, "تم شراء 5 قلوب بنجاح!", Toast.LENGTH_SHORT).show() }
-                        else Toast.makeText(context, "رصيدك من العملات لا يكفي!", Toast.LENGTH_SHORT).show()
+                        if (spendCoins(200)) { 
+                            addLives(5)
+                            AudioPlayer.playWin()
+                            wonPrizeText = "5 قلوب حياة إضافية! ❤️"
+                            wonPrizeIcon = R.drawable.ic_heart_custom
+                            dialogColor = CrimsonRed
+                            showWinDialog = true
+                        } else {
+                            Toast.makeText(context, "رصيدك من العملات لا يكفي!", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 )
                 Spacer(modifier = Modifier.height(40.dp))
             }
+        }
+    }
+
+    // ✨ شاشة الاحتفال (Win Dialog) مع الجزيئات المتساقطة
+    if (showWinDialog) {
+        Dialog(
+            onDismissRequest = { /* لا نسمح بالإغلاق بالنقر بالخارج لضمان الضغط على موافق */ },
+            properties = DialogProperties(usePlatformDefaultWidth = false) // لجعل الشاشة كاملة
+        ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                
+                // خلفية داكنة للتركيز على الجائزة
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)))
+                
+                // ✨ نظام الجزيئات المتساقطة (القلوب أو العملات)
+                FallingParticlesAnimation(iconRes = wonPrizeIcon)
+
+                // صندوق التهنئة
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .clip(RoundedCornerShape(30.dp))
+                        .background(VoidBlack)
+                        .border(3.dp, dialogColor, RoundedCornerShape(30.dp))
+                        .padding(30.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "ألف مبروك! 🎉", 
+                        fontSize = 36.sp, 
+                        fontWeight = FontWeight.Black, 
+                        color = dialogColor,
+                        style = TextStyle(shadow = Shadow(color = dialogColor, blurRadius = 15f))
+                    )
+                    Spacer(modifier = Modifier.height(15.dp))
+                    Text(text = "لقد ربحت:", fontSize = 20.sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(15.dp))
+                    
+                    // أيقونة الجائزة كبيرة ونابضة
+                    val infiniteTransition = rememberInfiniteTransition()
+                    val iconScale by infiniteTransition.animateFloat(
+                        initialValue = 0.9f, targetValue = 1.1f,
+                        animationSpec = infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse"
+                    )
+                    Image(painter = painterResource(id = wonPrizeIcon), contentDescription = null, modifier = Modifier.size(100.dp).scale(iconScale))
+                    
+                    Spacer(modifier = Modifier.height(15.dp))
+                    Text(text = wonPrizeText, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                    
+                    Spacer(modifier = Modifier.height(30.dp))
+                    
+                    Button(
+                        onClick = { AudioPlayer.playClick(); showWinDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = dialogColor.copy(alpha = 0.2f)),
+                        border = BorderStroke(2.dp, dialogColor),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth().height(55.dp)
+                    ) {
+                        Text("موافق واستلام الجائزة", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ✨ دالة برمجة تأثير الجزيئات المتساقطة سينمائياً
+data class ParticleConfig(val xRatio: Float, val delay: Int, val duration: Int, val size: Dp)
+
+@Composable
+fun FallingParticlesAnimation(iconRes: Int) {
+    // إنشاء 25 جزيء بأحجام وسرعات وأماكن عشوائية
+    val config = remember { List(25) { ParticleConfig(Math.random().toFloat(), (0..2000).random(), (2500..4500).random(), (20..50).random().dp) } }
+    
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val width = maxWidth
+        val height = maxHeight
+        
+        config.forEach { c ->
+            val infiniteTransition = rememberInfiniteTransition()
+            val yOffset by infiniteTransition.animateFloat(
+                initialValue = -100f, 
+                targetValue = height.value + 100f, 
+                animationSpec = infiniteRepeatable(tween(c.duration, delayMillis = c.delay, easing = LinearEasing)), label = "falling_y"
+            )
+            val rotation by infiniteTransition.animateFloat(
+                initialValue = 0f, 
+                targetValue = 360f, 
+                animationSpec = infiniteRepeatable(tween(c.duration, easing = LinearEasing)), label = "falling_rot"
+            )
+            
+            Image(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .offset(x = width * c.xRatio, y = yOffset.dp)
+                    .size(c.size)
+                    .rotate(rotation)
+                    .alpha(0.8f) // شفافية بسيطة لتبدو كالخلفية
+            )
         }
     }
 }
