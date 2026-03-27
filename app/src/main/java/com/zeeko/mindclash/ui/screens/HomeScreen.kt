@@ -45,7 +45,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     onNavigateToGame: (Int) -> Unit,
-    onNavigateToStore: () -> Unit // ✨ الإضافة الجديدة للمتجر
+    onNavigateToStore: () -> Unit,
+    onNavigateToSurvival: () -> Unit // ✨ الإضافة الجديدة لطور النجاة
 ) {
     val context = LocalContext.current
     val progressRepo = remember { UserProgressRepository(context) }
@@ -80,7 +81,8 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         unlockedLevel = progressRepo.getUnlockedLevel()
         val targetIndex = totalLevels - unlockedLevel
-        if (targetIndex >= 0) listState.animateScrollToItem(targetIndex)
+        // أضفنا 1 للـ targetIndex بسبب إضافة زر النجاة كعنصر أول (item)
+        if (targetIndex >= 0) listState.animateScrollToItem(targetIndex + 1)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -92,6 +94,32 @@ fun HomeScreen(
             contentPadding = PaddingValues(top = 120.dp, bottom = 50.dp, start = 30.dp, end = 30.dp), 
             verticalArrangement = Arrangement.spacedBy(45.dp)
         ) {
+            
+            // ✨ زر طور النجاة (يظهر أول شيء في القائمة)
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 10.dp)
+                        .height(110.dp)
+                        .clip(RoundedCornerShape(25.dp))
+                        .background(VoidBlack.copy(alpha = 0.85f))
+                        .border(2.dp, CrimsonRed, RoundedCornerShape(25.dp))
+                        .clickable { AudioPlayer.playClick(); onNavigateToSurvival() }, 
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Text("⏳", fontSize = 45.sp)
+                        Spacer(modifier = Modifier.width(15.dp))
+                        Column {
+                            Text("صراع الزمن", fontSize = 26.sp, fontWeight = FontWeight.Black, color = CrimsonRed, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 15f)))
+                            Text("تحدي النجاة اللانهائي!", fontSize = 16.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            // قائمة المستويات العادية
             itemsIndexed((1..totalLevels).reversed().toList()) { index, levelNum ->
                 val isUnlocked = levelNum <= unlockedLevel
                 val isCurrent = levelNum == unlockedLevel
@@ -106,7 +134,7 @@ fun HomeScreen(
             }
         }
 
-        // ✨ أزرار الشاشة العلوية (المتجر والإعدادات)
+        // أزرار الشاشة العلوية (المتجر والإعدادات)
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 20.dp, end = 20.dp).align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween,
