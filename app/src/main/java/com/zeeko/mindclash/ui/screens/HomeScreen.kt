@@ -7,6 +7,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.zeeko.mindclash.AudioPlayer
 import com.zeeko.mindclash.R
 import com.zeeko.mindclash.repository.UserProgressRepository
@@ -42,6 +46,7 @@ import com.zeeko.mindclash.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     onNavigateToGame: (Int) -> Unit,
@@ -50,8 +55,8 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val progressRepo = remember { UserProgressRepository(context) }
-    
     val sharedPreferences = context.getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE)
+    
     var hasAgreedToPrivacy by remember { mutableStateOf(sharedPreferences.getBoolean("PrivacyAgreed", false)) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     
@@ -67,6 +72,29 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     var backPressedOnce by remember { mutableStateOf(false) }
 
+    // ✨ متغيرات نظام المكافأة اليومية
+    val currentDayIndex = (System.currentTimeMillis() / 86400000L).toInt() // رقم اليوم عالمياً
+    val lastClaimDay = sharedPreferences.getInt("LastClaimDay", 0)
+    var currentStreak by remember { mutableIntStateOf(sharedPreferences.getInt("CurrentStreak", 0)) }
+    var showDailyRewardDialog by remember { mutableStateOf(false) }
+
+    // ✨ التحقق من المكافأة عند فتح الشاشة
+    LaunchedEffect(Unit) {
+        unlockedLevel = progressRepo.getUnlockedLevel()
+        val targetIndex = totalLevels - unlockedLevel
+        if (targetIndex >= 0) listState.animateScrollToItem(targetIndex)
+
+        // هندسة التتابع اليومي
+        if (currentDayIndex > lastClaimDay) {
+            // إذا غاب لأكثر من يوم، يعود لليوم الأول
+            if (currentDayIndex > lastClaimDay + 1 && lastClaimDay != 0) {
+                currentStreak = 0
+                sharedPreferences.edit().putInt("CurrentStreak", 0).apply()
+            }
+            showDailyRewardDialog = true // إظهار النافذة إذا كان هناك مكافأة اليوم
+        }
+    }
+
     BackHandler {
         if (backPressedOnce) {
             (context as? Activity)?.finish()
@@ -77,16 +105,9 @@ fun HomeScreen(
         }
     }
     
-    LaunchedEffect(Unit) {
-        unlockedLevel = progressRepo.getUnlockedLevel()
-        val targetIndex = totalLevels - unlockedLevel
-        if (targetIndex >= 0) listState.animateScrollToItem(targetIndex)
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         Image(painter = painterResource(id = R.drawable.bg_home), contentDescription = "Home", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
 
-        // ✨ زدنا المساحة السفلية لكي لا يغطي زر النجاة على المستويات الأولى
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
@@ -123,7 +144,6 @@ fun HomeScreen(
             ) { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", tint = NeonCyan, modifier = Modifier.size(30.dp)) }
         }
 
-        // ✨ الإضافة الجديدة: زر طور النجاة عائم وثابت في أسفل الشاشة
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -147,8 +167,81 @@ fun HomeScreen(
         }
     }
 
+    // ✨ شاشة المكافآت اليومية الفخمة
+    if (showDailyRewardDialog) {
+        Dialog(
+            onDismissRequest = { /* إجبار اللاعب على الضغط على زر الاستلام */ },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
+            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(3.dp, LiquidGold, RoundedCornerShape(30.dp)).padding(20.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("المكافآت اليومية 🎁", fontSize = 28.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 10f)))
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text("ادخل كل يوم لتصل للجائزة الكبرى!", fontSize = 14.sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // ترتيب الأيام السبعة
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // تعريف جوائز الأيام
+                        val rewards = listOf(
+                            Pair("يوم 1", Pair(50, 0)), Pair("يوم 2", Pair(100, 0)),
+                            Pair("يوم 3", Pair(0, 1)), Pair("يوم 4", Pair(150, 0)),
+                            Pair("يوم 5", Pair(0, 2)), Pair("يوم 6", Pair(200, 0))
+                        )
+
+                        rewards.forEachIndexed { index, reward ->
+                            val isPast = index < currentStreak
+                            val isToday = index == currentStreak
+                            DailyRewardItem(
+                                title = reward.first, coins = reward.second.first, lives = reward.second.second,
+                                isPast = isPast, isToday = isToday, isEpic = false
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    // اليوم السابع (الجائزة الكبرى)
+                    DailyRewardItem(
+                        title = "اليوم السابع (الكنز) 💎", coins = 500, lives = 3,
+                        isPast = 6 < currentStreak, isToday = 6 == currentStreak, isEpic = true, modifier = Modifier.fillMaxWidth().height(80.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(25.dp))
+
+                    Button(
+                        onClick = {
+                            AudioPlayer.playWin()
+                            val coinsToGive = listOf(50, 100, 0, 150, 0, 200, 500)[currentStreak]
+                            val livesToGive = listOf(0, 0, 1, 0, 2, 0, 3)[currentStreak]
+
+                            sharedPreferences.edit().apply {
+                                putInt("Coins", sharedPreferences.getInt("Coins", 0) + coinsToGive)
+                                putInt("Lives", sharedPreferences.getInt("Lives", 5) + livesToGive)
+                                putInt("LastClaimDay", currentDayIndex)
+                                putInt("CurrentStreak", if (currentStreak >= 6) 0 else currentStreak + 1)
+                            }.apply()
+
+                            Toast.makeText(context, "تم استلام المكافأة بنجاح! 🎉", Toast.LENGTH_SHORT).show()
+                            showDailyRewardDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = LiquidGold.copy(alpha = 0.2f)),
+                        border = BorderStroke(2.dp, LiquidGold),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth().height(55.dp)
+                    ) {
+                        Text("استلام المكافأة ✨", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+
     if (!hasAgreedToPrivacy) {
-        // ... (باقي كود الخصوصية والإعدادات كما هو بدون تغيير)
+        // ... نفس الكود الخاص بسياسة الخصوصية
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.95f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
             Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, NeonCyan, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "سياسة الخصوصية", fontSize = 28.sp, fontWeight = FontWeight.Black, color = NeonCyan)
@@ -163,6 +256,7 @@ fun HomeScreen(
     }
 
     if (showSettingsDialog) {
+        // ... نفس الكود الخاص بالإعدادات
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
             Column(modifier = Modifier.fillMaxWidth(0.85f).clip(RoundedCornerShape(30.dp)).background(VoidBlack).border(2.dp, LiquidGold, RoundedCornerShape(30.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "الإعدادات", fontSize = 28.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
@@ -188,8 +282,65 @@ fun HomeScreen(
     }
 }
 
+// ✨ تصميم عنصر المكافأة (الصناديق الصغيرة)
+@Composable
+fun DailyRewardItem(title: String, coins: Int, lives: Int, isPast: Boolean, isToday: Boolean, isEpic: Boolean, modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.95f, targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse"
+    )
+
+    val bgColor = when {
+        isPast -> Color.DarkGray.copy(alpha = 0.5f)
+        isToday -> LiquidGold.copy(alpha = 0.3f)
+        else -> VoidBlack.copy(alpha = 0.8f)
+    }
+    val borderColor = when {
+        isPast -> Color.Gray
+        isToday -> LiquidGold
+        isEpic -> NeonCyan
+        else -> CrimsonRed.copy(alpha = 0.5f)
+    }
+
+    Box(
+        modifier = modifier
+            .padding(4.dp)
+            .width(if (isEpic) 280.dp else 90.dp)
+            .height(if (isEpic) 80.dp else 90.dp)
+            .scale(if (isToday) scale else 1f)
+            .clip(RoundedCornerShape(15.dp))
+            .background(bgColor)
+            .border(if (isToday) 2.dp else 1.dp, borderColor, RoundedCornerShape(15.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isPast) {
+            Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color.Green, modifier = Modifier.size(40.dp))
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Text(title, color = if (isToday) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(5.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (coins > 0) {
+                        Text("+$coins", color = LiquidGold, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Image(painter = painterResource(id = R.drawable.ic_coin_custom), contentDescription = "Coins", modifier = Modifier.size(16.dp))
+                    }
+                    if (coins > 0 && lives > 0) Spacer(modifier = Modifier.width(10.dp))
+                    if (lives > 0) {
+                        Text("+$lives", color = CrimsonRed, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Image(painter = painterResource(id = R.drawable.ic_heart_custom), contentDescription = "Lives", modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun LevelNodeCustom(levelNumber: Int, isUnlocked: Boolean, isCurrent: Boolean, onClick: () -> Unit) {
+    // ... احتفظ بها كما هي بدون تغيير ...
     var pulseScale by remember { mutableStateOf(1f) }
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     pulseScale = infiniteTransition.animateFloat(initialValue = 1f, targetValue = if (isCurrent) 1.15f else 1f, animationSpec = infiniteRepeatable(animation = tween(800, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse), label = "pulse_anim").value
