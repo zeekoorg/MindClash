@@ -8,7 +8,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -47,11 +46,11 @@ fun StoreScreen(
     val context = LocalContext.current as Activity
     val prefs = context.getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE)
     
-    // جلب الرصيد الحالي
+    // جلب الرصيد الحالي (نستخدم نفس المفاتيح الموجودة في اللعبة)
     var currentCoins by remember { mutableIntStateOf(prefs.getInt("Coins", 0)) }
     var currentLives by remember { mutableIntStateOf(prefs.getInt("Lives", 5)) }
 
-    // دوال تحديث الرصيد
+    // دوال تحديث الرصيد وحفظه فوراً في الذاكرة
     fun addCoins(amount: Int) {
         currentCoins += amount
         prefs.edit().putInt("Coins", currentCoins).apply()
@@ -80,7 +79,8 @@ fun StoreScreen(
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Image(painter = painterResource(id = R.drawable.bg_home), contentDescription = "Store Background", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        // ✨ تم تغيير الخلفية لتكون مخصصة للمتجر
+        Image(painter = painterResource(id = R.drawable.bg_store), contentDescription = "Store Background", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
 
         Column(modifier = Modifier.fillMaxSize()) {
             // --- الشريط العلوي (الرصيد وزر الرجوع) ---
@@ -92,13 +92,15 @@ fun StoreScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, CrimsonRed, RoundedCornerShape(20.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                         Text(text = "$currentLives", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text("❤️", fontSize = 18.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // ✨ استخدام الأيقونة بدلاً من الإيموجي
+                        Image(painter = painterResource(id = R.drawable.ic_heart_custom), contentDescription = "Hearts", modifier = Modifier.size(24.dp))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, LiquidGold, RoundedCornerShape(20.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                         Text(text = "$currentCoins", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text("🪙", fontSize = 18.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // ✨ استخدام الأيقونة بدلاً من الإيموجي
+                        Image(painter = painterResource(id = R.drawable.ic_coin_custom), contentDescription = "Coins", modifier = Modifier.size(24.dp))
                     }
                 }
             }
@@ -112,12 +114,9 @@ fun StoreScreen(
                 Text(text = "جرب حظك واربح جوائز ضخمة!", color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(bottom = 20.dp))
 
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.size(250.dp)) {
-                    // خلفية العجلة
                     Box(modifier = Modifier.fillMaxSize().rotate(animatedRotation).clip(CircleShape).background(Color.White.copy(alpha = 0.1f)).border(4.dp, NeonCyan, CircleShape), contentAlignment = Alignment.Center) {
                         Image(painter = painterResource(id = R.drawable.logo_game), contentDescription = "Wheel Core", modifier = Modifier.size(100.dp).alpha(0.5f))
                     }
-                    
-                    // المؤشر (السهم)
                     Icon(painter = painterResource(id = R.drawable.ic_status_wrong), contentDescription = "Pointer", tint = CrimsonRed, modifier = Modifier.align(Alignment.TopCenter).offset(y = (-15).dp).size(40.dp).rotate(180f))
                 }
 
@@ -130,22 +129,23 @@ fun StoreScreen(
                         adManager.showRewardedAd(
                             activity = context,
                             onRewardEarned = {
-                                isSpinning = true
+                                // ✨ تأخير ثانية لكي يغلق الإعلان تماماً ويشاهد اللاعب العجلة تدور
                                 scope.launch {
-                                    val randomSpins = (3..6).random() * 360f // لفات كاملة
-                                    val randomStopAngle = (0..360).random().toFloat() // زاوية التوقف
+                                    delay(1000) 
+                                    isSpinning = true
+                                    val randomSpins = (3..6).random() * 360f
+                                    val randomStopAngle = (0..360).random().toFloat()
                                     rotationAngle += randomSpins + randomStopAngle
                                     
                                     delay(4000) // انتظار انتهاء الأنيميشن
                                     AudioPlayer.playWin()
                                     
-                                    // تحديد الجائزة برمجياً
                                     val prize = (1..100).random()
                                     when {
-                                        prize <= 50 -> { addCoins(50); Toast.makeText(context, "ربحت 50 عملة! 🪙", Toast.LENGTH_SHORT).show() }
-                                        prize <= 80 -> { addLives(2); Toast.makeText(context, "ربحت قلبين! ❤️❤️", Toast.LENGTH_SHORT).show() }
-                                        prize <= 95 -> { addCoins(150); Toast.makeText(context, "الجائزة الفضية: 150 عملة! 🌟", Toast.LENGTH_LONG).show() }
-                                        else -> { addCoins(500); Toast.makeText(context, "الجائزة الكبرى: 500 عملة! 🎉💎", Toast.LENGTH_LONG).show() }
+                                        prize <= 50 -> { addCoins(50); Toast.makeText(context, "ربحت 50 عملة!", Toast.LENGTH_SHORT).show() }
+                                        prize <= 80 -> { addLives(2); Toast.makeText(context, "ربحت قلبين!", Toast.LENGTH_SHORT).show() }
+                                        prize <= 95 -> { addCoins(150); Toast.makeText(context, "الجائزة الفضية: 150 عملة!", Toast.LENGTH_LONG).show() }
+                                        else -> { addCoins(500); Toast.makeText(context, "الجائزة الكبرى: 500 عملة!", Toast.LENGTH_LONG).show() }
                                     }
                                     isSpinning = false
                                 }
@@ -165,12 +165,12 @@ fun StoreScreen(
                 Divider(color = NeonCyan.copy(alpha = 0.5f), thickness = 2.dp)
                 Spacer(modifier = Modifier.height(30.dp))
 
-                // --- قسم السوق السوداء (المتجر) ---
+                // --- قسم السوق السوداء ---
                 Text(text = "السوق السوداء 🛒", fontSize = 32.sp, fontWeight = FontWeight.Black, color = CrimsonRed, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 15f)))
                 Spacer(modifier = Modifier.height(20.dp))
 
                 StoreItemCustom(
-                    title = "خزنة العملات", description = "شاهد إعلان واحصل على 100 عملة ذهبية", buttonText = "100 🪙", buttonColor = LiquidGold,
+                    title = "خزنة العملات", description = "شاهد إعلان واحصل على 100 عملة", buttonText = "100 عملة", buttonColor = LiquidGold, buttonIcon = R.drawable.ic_coin_custom,
                     onClick = {
                         AudioPlayer.playClick()
                         adManager.showRewardedAd(context, onRewardEarned = { addCoins(100); AudioPlayer.playWin(); Toast.makeText(context, "تمت إضافة 100 عملة!", Toast.LENGTH_SHORT).show() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
@@ -178,14 +178,13 @@ fun StoreScreen(
                 )
                 
                 StoreItemCustom(
-                    title = "جرعة الحياة", description = "اشترِ 5 قلوب باستخدام عملاتك", buttonText = "شراء بـ 200 🪙", buttonColor = CrimsonRed,
+                    title = "جرعة الحياة", description = "اشترِ 5 قلوب باستخدام عملاتك", buttonText = "بـ 200 عملة", buttonColor = CrimsonRed, buttonIcon = R.drawable.ic_heart_custom,
                     onClick = {
                         AudioPlayer.playClick()
                         if (spendCoins(200)) { addLives(5); AudioPlayer.playWin(); Toast.makeText(context, "تم شراء 5 قلوب بنجاح!", Toast.LENGTH_SHORT).show() }
                         else Toast.makeText(context, "رصيدك من العملات لا يكفي!", Toast.LENGTH_SHORT).show()
                     }
                 )
-                
                 Spacer(modifier = Modifier.height(40.dp))
             }
         }
@@ -193,14 +192,19 @@ fun StoreScreen(
 }
 
 @Composable
-fun StoreItemCustom(title: String, description: String, buttonText: String, buttonColor: Color, onClick: () -> Unit) {
+fun StoreItemCustom(title: String, description: String, buttonText: String, buttonColor: Color, buttonIcon: Int, onClick: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(RoundedCornerShape(20.dp)).background(VoidBlack.copy(alpha = 0.7f)).border(1.dp, buttonColor.copy(alpha = 0.5f), RoundedCornerShape(20.dp)).padding(15.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(modifier = Modifier.weight(1f)) {
             Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Text(text = description, fontSize = 14.sp, color = Color.Gray)
         }
         Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = buttonColor.copy(alpha = 0.2f)), border = BorderStroke(1.dp, buttonColor), shape = RoundedCornerShape(15.dp)) {
-            Text(buttonText, color = Color.White, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(buttonText, color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(5.dp))
+                Image(painter = painterResource(id = buttonIcon), contentDescription = null, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
+
