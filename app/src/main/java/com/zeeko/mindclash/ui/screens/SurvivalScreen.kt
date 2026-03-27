@@ -5,12 +5,14 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke // ✨ تم الإضافة
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape // ✨ تم الإضافة
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,7 +47,6 @@ import com.zeeko.mindclash.ads.AdManager
 import com.zeeko.mindclash.ui.theme.*
 import kotlinx.coroutines.delay
 
-// قائمة أسئلة مؤقتة وعشوائية لطور النجاة (حتى نربط قاعدة البيانات)
 val survivalQuestions = listOf(
     Pair("شيء كلما زاد نقص، ما هو؟", "العمر"),
     Pair("له أسنان كثيرة ولكنه لا يعض، ما هو؟", "المشط"),
@@ -67,20 +68,17 @@ fun SurvivalScreen(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // حالة اللعبة
     var timeLeft by remember { mutableIntStateOf(60) }
     var score by remember { mutableIntStateOf(0) }
     var highScore by remember { mutableIntStateOf(prefs.getInt("SurvivalHighScore", 0)) }
     var isGameOver by remember { mutableStateOf(false) }
     var isTimerRunning by remember { mutableStateOf(true) }
     
-    // حالة السؤال والإجابة
     var currentQuestionIndex by remember { mutableIntStateOf(survivalQuestions.indices.random()) }
     val currentQuestion = survivalQuestions[currentQuestionIndex]
     var userAnswer by remember { mutableStateOf("") }
     var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
 
-    // تأثيرات
     var showCorrectAnim by remember { mutableStateOf(false) }
     var showWrongAnim by remember { mutableStateOf(false) }
     val infiniteTransition = rememberInfiniteTransition()
@@ -89,7 +87,6 @@ fun SurvivalScreen(
         animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "timer"
     )
 
-    // مؤقت اللعبة
     LaunchedEffect(isTimerRunning, timeLeft) {
         if (isTimerRunning && timeLeft > 0) {
             delay(1000)
@@ -105,14 +102,12 @@ fun SurvivalScreen(
         }
     }
 
-    // التحقق من الإجابة
     LaunchedEffect(userAnswer) {
         if (userAnswer.length == currentQuestion.second.length) {
             if (userAnswer == currentQuestion.second) {
-                // إجابة صحيحة
                 AudioPlayer.playCorrect()
                 score += 10
-                timeLeft += 5 // مكافأة وقت
+                timeLeft += 5 
                 showCorrectAnim = true
                 delay(500)
                 showCorrectAnim = false
@@ -120,9 +115,8 @@ fun SurvivalScreen(
                 textFieldValue = TextFieldValue("")
                 currentQuestionIndex = survivalQuestions.indices.random()
             } else {
-                // إجابة خاطئة
                 AudioPlayer.playWrong()
-                timeLeft = maxOf(0, timeLeft - 5) // عقاب وقت
+                timeLeft = maxOf(0, timeLeft - 5) 
                 showWrongAnim = true
                 delay(500)
                 showWrongAnim = false
@@ -138,20 +132,16 @@ fun SurvivalScreen(
         Column(modifier = Modifier.fillMaxSize().padding(16.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(modifier = Modifier.height(30.dp))
 
-            // الشريط العلوي (الوقت والنقاط)
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                // النقاط
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("النقاط", color = LiquidGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Text(text = "$score", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 10f)))
                 }
                 
-                // الوقت
                 Box(modifier = Modifier.size(90.dp).scale(timerScale).clip(CircleShape).background(if (timeLeft <= 10) CrimsonRed.copy(alpha = 0.5f) else VoidBlack.copy(alpha = 0.8f)).border(3.dp, if (timeLeft <= 10) CrimsonRed else NeonCyan, CircleShape), contentAlignment = Alignment.Center) {
                     Text(text = "$timeLeft", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black)
                 }
 
-                // أعلى رقم
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("أعلى رقم", color = NeonCyan, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Text(text = "$highScore", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
@@ -160,7 +150,6 @@ fun SurvivalScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // صندوق السؤال
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(200.dp)) {
                 Image(painter = painterResource(id = R.drawable.bg_question), contentDescription = "Question", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
                 Text(text = currentQuestion.first, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center, lineHeight = 36.sp, modifier = Modifier.padding(25.dp))
@@ -168,7 +157,6 @@ fun SurvivalScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // لوحة الإدخال
             val isArabicAnswer = currentQuestion.second.any { it in '\u0600'..'\u06FF' }
             
             BasicTextField(
@@ -203,11 +191,9 @@ fun SurvivalScreen(
             Text(text = "إجابة صحيحة = +5 ثوانٍ | خاطئة = -5 ثوانٍ", color = CrimsonRed, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 20.dp))
         }
 
-        // المؤثرات (استخدام نفس الدوال الموجودة في GameScreen)
         AnimatedVisibility(visible = showCorrectAnim, enter = fadeIn(), exit = fadeOut()) { NeoCorrectOverlayCustom() }
         AnimatedVisibility(visible = showWrongAnim, enter = fadeIn(), exit = fadeOut()) { NeoWrongOverlayCustom() }
 
-        // شاشة نهاية الوقت (فيها زر الإعلان)
         if (isGameOver) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
                 Column(modifier = Modifier.fillMaxWidth(0.9f).clip(RoundedCornerShape(40.dp)).background(VoidBlack).border(2.dp, CrimsonRed, RoundedCornerShape(40.dp)).padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -216,11 +202,10 @@ fun SurvivalScreen(
                     Text(text = "النقاط التي جمعتها: $score", fontSize = 24.sp, color = LiquidGold, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(30.dp))
                     
-                    // الزر الذهبي (المنقذ والمربح)
                     Button(onClick = {
                         AudioPlayer.playClick()
                         adManager.showRewardedAd(context, onRewardEarned = {
-                            timeLeft = 15 // إضافة 15 ثانية
+                            timeLeft = 15 
                             isGameOver = false
                             isTimerRunning = true
                         }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
