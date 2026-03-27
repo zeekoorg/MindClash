@@ -36,6 +36,14 @@ fun MindClashNavGraph(adManager: AdManager) {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+                // مسار طور النجاة (التحدي بالزمن)
+        composable("survival") {
+            SurvivalScreen(
+                adManager = adManager,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
 
         composable(route = "game/{level}", arguments = listOf(navArgument("level") { type = NavType.IntType })) { backStackEntry ->
             val level = backStackEntry.arguments?.getInt("level") ?: 1
