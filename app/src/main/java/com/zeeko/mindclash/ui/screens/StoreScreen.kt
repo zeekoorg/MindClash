@@ -26,11 +26,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.zeeko.mindclash.AudioPlayer
 import com.zeeko.mindclash.R
 import com.zeeko.mindclash.ads.AdManager
@@ -45,12 +48,11 @@ fun StoreScreen(
 ) {
     val context = LocalContext.current as Activity
     val prefs = context.getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE)
+    val lifecycleOwner = LocalLifecycleOwner.current
     
-    // جلب الرصيد الحالي (نستخدم نفس المفاتيح الموجودة في اللعبة)
     var currentCoins by remember { mutableIntStateOf(prefs.getInt("Coins", 0)) }
     var currentLives by remember { mutableIntStateOf(prefs.getInt("Lives", 5)) }
 
-    // دوال تحديث الرصيد وحفظه فوراً في الذاكرة
     fun addCoins(amount: Int) {
         currentCoins += amount
         prefs.edit().putInt("Coins", currentCoins).apply()
@@ -68,22 +70,65 @@ fun StoreScreen(
         return false
     }
 
-    // متغيرات عجلة الحظ
     val scope = rememberCoroutineScope()
     var isSpinning by remember { mutableStateOf(false) }
     var rotationAngle by remember { mutableFloatStateOf(0f) }
+    
+    // ✨ المتغيرات التي تخزن حالة "انتظار إغلاق الإعلان"
+    var pendingWheelSpin by remember { mutableStateOf(false) }
+    var pendingCoinsReward by remember { mutableStateOf(false) }
+
     val animatedRotation by animateFloatAsState(
         targetValue = rotationAngle,
         animationSpec = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
         label = "spin"
     )
 
+    // ✨ المراقب الذكي: يراقب متى يغلق الإعلان وتعود شاشة اللعبة للظهور (ON_RESUME)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // إذا تم إغلاق الإعلان وكانت لفة العجلة معلقة، ابدأ اللف الآن!
+                if (pendingWheelSpin) {
+                    pendingWheelSpin = false
+                    isSpinning = true
+                    scope.launch {
+                        delay(500) // تأخير بسيط جداً لترتاح العين بعد إغلاق الإعلان
+                        val randomSpins = (3..6).random() * 360f
+                        val randomStopAngle = (0..360).random().toFloat()
+                        rotationAngle += randomSpins + randomStopAngle
+                        
+                        delay(4000)
+                        AudioPlayer.playWin()
+                        
+                        val prize = (1..100).random()
+                        when {
+                            prize <= 50 -> { addCoins(50); Toast.makeText(context, "ربحت 50 عملة!", Toast.LENGTH_SHORT).show() }
+                            prize <= 80 -> { addLives(2); Toast.makeText(context, "ربحت قلبين!", Toast.LENGTH_SHORT).show() }
+                            prize <= 95 -> { addCoins(150); Toast.makeText(context, "الجائزة الفضية: 150 عملة!", Toast.LENGTH_LONG).show() }
+                            else -> { addCoins(500); Toast.makeText(context, "الجائزة الكبرى: 500 عملة!", Toast.LENGTH_LONG).show() }
+                        }
+                        isSpinning = false
+                    }
+                }
+                
+                // إذا تم إغلاق الإعلان وكانت جائزة الـ 100 عملة معلقة، أعطه إياها الآن!
+                if (pendingCoinsReward) {
+                    pendingCoinsReward = false
+                    addCoins(100)
+                    AudioPlayer.playWin()
+                    Toast.makeText(context, "تمت إضافة 100 عملة!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        // ✨ تم تغيير الخلفية لتكون مخصصة للمتجر
         Image(painter = painterResource(id = R.drawable.bg_store), contentDescription = "Store Background", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // --- الشريط العلوي (الرصيد وزر الرجوع) ---
             Row(modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 20.dp, end = 20.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { AudioPlayer.playClick(); onNavigateBack() }, modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, NeonCyan, CircleShape).size(50.dp)) {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = NeonCyan)
@@ -93,13 +138,11 @@ fun StoreScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, CrimsonRed, RoundedCornerShape(20.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                         Text(text = "$currentLives", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        // ✨ استخدام الأيقونة بدلاً من الإيموجي
                         Image(painter = painterResource(id = R.drawable.ic_heart_custom), contentDescription = "Hearts", modifier = Modifier.size(24.dp))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, LiquidGold, RoundedCornerShape(20.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                         Text(text = "$currentCoins", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        // ✨ استخدام الأيقونة بدلاً من الإيموجي
                         Image(painter = painterResource(id = R.drawable.ic_coin_custom), contentDescription = "Coins", modifier = Modifier.size(24.dp))
                     }
                 }
@@ -109,7 +152,6 @@ fun StoreScreen(
 
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 
-                // --- قسم عجلة الحظ ---
                 Text(text = "عجلة المصير 🎡", fontSize = 32.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
                 Text(text = "جرب حظك واربح جوائز ضخمة!", color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(bottom = 20.dp))
 
@@ -129,26 +171,8 @@ fun StoreScreen(
                         adManager.showRewardedAd(
                             activity = context,
                             onRewardEarned = {
-                                // ✨ تأخير ثانية لكي يغلق الإعلان تماماً ويشاهد اللاعب العجلة تدور
-                                scope.launch {
-                                    delay(1000) 
-                                    isSpinning = true
-                                    val randomSpins = (3..6).random() * 360f
-                                    val randomStopAngle = (0..360).random().toFloat()
-                                    rotationAngle += randomSpins + randomStopAngle
-                                    
-                                    delay(4000) // انتظار انتهاء الأنيميشن
-                                    AudioPlayer.playWin()
-                                    
-                                    val prize = (1..100).random()
-                                    when {
-                                        prize <= 50 -> { addCoins(50); Toast.makeText(context, "ربحت 50 عملة!", Toast.LENGTH_SHORT).show() }
-                                        prize <= 80 -> { addLives(2); Toast.makeText(context, "ربحت قلبين!", Toast.LENGTH_SHORT).show() }
-                                        prize <= 95 -> { addCoins(150); Toast.makeText(context, "الجائزة الفضية: 150 عملة!", Toast.LENGTH_LONG).show() }
-                                        else -> { addCoins(500); Toast.makeText(context, "الجائزة الكبرى: 500 عملة!", Toast.LENGTH_LONG).show() }
-                                    }
-                                    isSpinning = false
-                                }
+                                // ✨ هنا نسجل أن اللاعب استحق المكافأة، لكن لن نلف العجلة إلا بعد إغلاق الإعلان (ON_RESUME)
+                                pendingWheelSpin = true
                             },
                             onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، حاول بعد قليل", Toast.LENGTH_SHORT).show() }
                         )
@@ -165,7 +189,6 @@ fun StoreScreen(
                 Divider(color = NeonCyan.copy(alpha = 0.5f), thickness = 2.dp)
                 Spacer(modifier = Modifier.height(30.dp))
 
-                // --- قسم السوق السوداء ---
                 Text(text = "السوق السوداء 🛒", fontSize = 32.sp, fontWeight = FontWeight.Black, color = CrimsonRed, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 15f)))
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -173,7 +196,7 @@ fun StoreScreen(
                     title = "خزنة العملات", description = "شاهد إعلان واحصل على 100 عملة", buttonText = "100 عملة", buttonColor = LiquidGold, buttonIcon = R.drawable.ic_coin_custom,
                     onClick = {
                         AudioPlayer.playClick()
-                        adManager.showRewardedAd(context, onRewardEarned = { addCoins(100); AudioPlayer.playWin(); Toast.makeText(context, "تمت إضافة 100 عملة!", Toast.LENGTH_SHORT).show() }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
+                        adManager.showRewardedAd(context, onRewardEarned = { pendingCoinsReward = true }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
                     }
                 )
                 
@@ -207,4 +230,3 @@ fun StoreItemCustom(title: String, description: String, buttonText: String, butt
         }
     }
 }
-
