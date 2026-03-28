@@ -118,7 +118,7 @@ fun StoreScreen(
 
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 
-                Text(text = "السوق السوداء 🛒", fontSize = 36.sp, fontWeight = FontWeight.Black, color = CrimsonRed, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 15f)))
+                Text(text = "متجر العقول 🛒", fontSize = 36.sp, fontWeight = FontWeight.Black, color = CrimsonRed, style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 15f)))
                 Text(text = "تزود بالعملات واشترِ المزيد من القلوب", color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(bottom = 30.dp))
 
                 StoreItemCustom(
