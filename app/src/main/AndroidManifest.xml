@@ -23,7 +23,7 @@
 
         <meta-data
             android:name="com.yandex.mobile.ads.APPLICATION_ID"
-            android:value="18439206" />
+            android:value="19018995" />
 
         <activity
             android:name=".MainActivity"
