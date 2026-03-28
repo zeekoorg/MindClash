@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -51,7 +52,8 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     onNavigateToGame: (Int) -> Unit,
     onNavigateToStore: () -> Unit,
-    onNavigateToSurvival: () -> Unit
+    onNavigateToSurvival: () -> Unit,
+    onNavigateToWheel: () -> Unit // ✨ تمت إضافة توجيه عجلة الحظ هنا
 ) {
     val context = LocalContext.current
     val progressRepo = remember { UserProgressRepository(context) }
@@ -68,10 +70,10 @@ fun HomeScreen(
     var unlockedLevel by remember { mutableIntStateOf(progressRepo.getUnlockedLevel()) }
     val totalLevels = 50
 
-    val isStoreUnlocked = unlockedLevel >= 3
+    // ✨ تحدي النجاة يظل مقفولاً حتى المستوى 5، أما المتجر أصبح مفتوحاً دائماً
     val isSurvivalUnlocked = unlockedLevel >= 5
 
-    // ✨ جلب الرصيد اللحظي للقلوب والعملات لعرضها في الشاشة الرئيسية
+    // جلب الرصيد اللحظي للقلوب والعملات
     var currentCoins by remember { mutableIntStateOf(sharedPreferences.getInt("Coins", 0)) }
     var currentLives by remember { mutableIntStateOf(sharedPreferences.getInt("Lives", 5)) }
 
@@ -84,7 +86,7 @@ fun HomeScreen(
     var currentStreak by remember { mutableIntStateOf(sharedPreferences.getInt("CurrentStreak", 0)) }
     var showDailyRewardDialog by remember { mutableStateOf(false) }
 
-    // ✨ تحديث الرصيد والمستوى كل مرة تظهر فيها الشاشة (عند العودة من المتجر أو اللعب)
+    // تحديث الرصيد والمستوى كل مرة تظهر فيها الشاشة
     LaunchedEffect(Unit) {
         unlockedLevel = progressRepo.getUnlockedLevel()
         currentCoins = sharedPreferences.getInt("Coins", 0)
@@ -135,7 +137,7 @@ fun HomeScreen(
             }
         }
 
-        // ✨ --- الشريط العلوي المُرتب الجديد (إعدادات، متجر، عملات، قلوب) ---
+        // --- الشريط العلوي المُرتب ---
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 15.dp, end = 15.dp).align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,25 +151,55 @@ fun HomeScreen(
                     modifier = Modifier.clip(CircleShape).background(VoidBlack.copy(alpha = 0.8f)).border(2.dp, NeonCyan, CircleShape).size(45.dp)
                 ) { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", tint = NeonCyan, modifier = Modifier.size(24.dp)) }
 
-                // زر المتجر (مربوط بنظام القفل)
+                // زر المتجر (أصبح مفتوحاً للجميع) ✨
                 IconButton(
                     onClick = { 
                         AudioPlayer.playClick()
-                        if (isStoreUnlocked) onNavigateToStore()
-                        else Toast.makeText(context, "السوق السوداء تُفتح عند الوصول للمستوى 3 🔒", Toast.LENGTH_SHORT).show()
+                        onNavigateToStore()
                     },
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(VoidBlack.copy(alpha = 0.8f))
-                        .border(2.dp, if (isStoreUnlocked) LiquidGold else Color.Gray, CircleShape)
+                        .border(2.dp, LiquidGold, CircleShape)
                         .size(45.dp)
                 ) { 
-                    Text(if (isStoreUnlocked) "🛒" else "🔒", fontSize = 20.sp) 
+                    Text("🛒", fontSize = 20.sp) 
                 }
             }
 
-            // مجموعة الرصيد (العملات والقلوب)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // مجموعة الرصيد (عجلة الحظ، العملات، القلوب)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                
+                // ✨ زر أيقونة عجلة الحظ الدوارة ✨
+                val infiniteTransition = rememberInfiniteTransition(label = "wheel_spin")
+                val rotation by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 360f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(4000, easing = LinearEasing), // تدور كل 4 ثواني بنعومة
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "spin_animation"
+                )
+
+                IconButton(
+                    onClick = { 
+                        AudioPlayer.playClick()
+                        onNavigateToWheel()
+                    },
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(VoidBlack.copy(alpha = 0.8f))
+                        .border(2.dp, NeonCyan, CircleShape)
+                        .size(40.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_wheel_custom), // تأكد من اسم ملف صورتك هنا
+                        contentDescription = "Wheel of Fortune",
+                        modifier = Modifier.size(26.dp).rotate(rotation)
+                    )
+                }
+
                 // صندوق العملات
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(VoidBlack.copy(alpha = 0.8f), RoundedCornerShape(20.dp)).border(1.dp, LiquidGold, RoundedCornerShape(20.dp)).padding(horizontal = 10.dp, vertical = 6.dp)) {
                     Text(text = "$currentCoins", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -223,7 +255,7 @@ fun HomeScreen(
         }
     }
 
-    // --- نوافذ الحوار (نفسها تماماً بدون تغيير) ---
+    // --- نوافذ الحوار ---
     if (showDailyRewardDialog) {
         Dialog(
             onDismissRequest = { /* إجبار اللاعب على الضغط على زر الاستلام */ },
@@ -278,7 +310,6 @@ fun HomeScreen(
                                 putInt("CurrentStreak", if (currentStreak >= 6) 0 else currentStreak + 1)
                             }.apply()
                             
-                            // تحديث الرصيد اللحظي في الشاشة
                             currentCoins += coinsToGive
                             currentLives += livesToGive
 
