@@ -3,6 +3,10 @@ name: Manual Android Build 🚀
 on:
   workflow_dispatch: 
 
+# ✨ إضافة هذا المتغير لإجبار GitHub على استخدام Node 24 وإخفاء التحذير
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,12 +29,10 @@ jobs:
         run: chmod +x gradlew
 
       - name: 🔨 بناء التطبيق (نسخة Release غير موقعة)
-        # تم التغيير هنا لاستخراج نسخة ريليس
         run: ./gradlew assembleRelease --no-daemon
 
       - name: 📤 رفع ملف الـ APK النهائي للتحميل
         uses: actions/upload-artifact@v4
         with:
           name: MindClash-App-Unsigned
-          # تم التغيير هنا ليلتقط ملف الـ APK من مجلد الـ release
           path: app/build/outputs/apk/release/*.apk
