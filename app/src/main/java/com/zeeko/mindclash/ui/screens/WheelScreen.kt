@@ -178,7 +178,7 @@ fun WheelScreen(
                         adManager.showRewardedAd(
                             activity = context,
                             onRewardEarned = { pendingWheelSpin = true },
-                            onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز، حاول بعد قليل", Toast.LENGTH_SHORT).show() }
+                            onAdFailed = { Toast.makeText(context, "تأكد من الإتصال", Toast.LENGTH_SHORT).show() }
                         )
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = NeonCyan.copy(alpha = 0.2f)),
@@ -186,7 +186,7 @@ fun WheelScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth().height(60.dp)
                 ) {
-                    Text("لف العجلة مجاناً (إعلان) 📺", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("لف العجلة مقابل إعلان 📺", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
