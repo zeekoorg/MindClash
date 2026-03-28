@@ -20,7 +20,7 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
 
     // الانتقال تلقائياً بعد 4 ثوانٍ (4000 ملي ثانية)
     LaunchedEffect(Unit) {
-        delay(8000)
+        delay(4000)
         onNavigateToHome()
     }
 
