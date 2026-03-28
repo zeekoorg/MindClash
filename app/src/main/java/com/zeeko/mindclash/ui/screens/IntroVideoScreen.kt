@@ -59,7 +59,7 @@ fun IntroVideoScreen(onVideoFinished: () -> Unit) {
 
     // مؤقت ظهور زر التخطي (بعد 5 ثواني)
     LaunchedEffect(Unit) {
-        delay(5000)
+        delay(15000)
         showSkipButton = true
     }
 
