@@ -194,7 +194,7 @@ fun HomeScreen(
                         .size(40.dp)
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_wheel_custom), // تأكد من اسم ملف صورتك هنا
+                        painter = painterResource(id = R.drawable.wheel_asset), // تأكد من اسم ملف صورتك هنا
                         contentDescription = "Wheel of Fortune",
                         modifier = Modifier.size(26.dp).rotate(rotation)
                     )
@@ -229,7 +229,7 @@ fun HomeScreen(
                 .clickable { 
                     AudioPlayer.playClick()
                     if (isSurvivalUnlocked) onNavigateToSurvival()
-                    else Toast.makeText(context, "تحدي النجاة يُفتح عند الوصول للمستوى 5 🔒", Toast.LENGTH_SHORT).show()
+                    else Toast.makeText(context, "صراع الزمن يُفتح عند الوصول للمستوى 5 🔒", Toast.LENGTH_SHORT).show()
                 }, 
             contentAlignment = Alignment.Center
         ) {
