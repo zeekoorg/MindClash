@@ -151,7 +151,7 @@ fun WheelScreen(
 
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 
-                Text(text = "عجلة المصير 🎡", fontSize = 36.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
+                Text(text = "عجلة الحظ  🎡", fontSize = 36.sp, fontWeight = FontWeight.Black, color = LiquidGold, style = TextStyle(shadow = Shadow(color = LiquidGold, blurRadius = 15f)))
                 Text(text = "جرب حظك واربح جوائز ضخمة!", color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(bottom = 30.dp))
 
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.size(300.dp)) {
