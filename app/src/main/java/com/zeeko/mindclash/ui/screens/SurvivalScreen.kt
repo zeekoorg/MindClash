@@ -208,7 +208,7 @@ fun SurvivalScreen(
                             timeLeft = 15 
                             isGameOver = false
                             isTimerRunning = true
-                        }, onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز", Toast.LENGTH_SHORT).show() })
+                        }, onAdFailed = { Toast.makeText(context, "تأكد من الإتصال", Toast.LENGTH_SHORT).show() })
                     }, colors = ButtonDefaults.buttonColors(containerColor = LiquidGold.copy(alpha = 0.2f)), border = BorderStroke(2.dp, LiquidGold), modifier = Modifier.fillMaxWidth().height(60.dp), shape = RoundedCornerShape(20.dp)) { 
                         Text("أنقذني بـ 15 ثانية (إعلان) 📺", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) 
                     }
