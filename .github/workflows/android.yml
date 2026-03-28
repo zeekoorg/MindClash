@@ -18,17 +18,19 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: ⚙️ توليد ملفات الجرادل الأساسية (لأنك تعمل من الهاتف)
+      - name: ⚙️ توليد ملفات الجرادل الأساسية
         run: gradle wrapper --gradle-version 8.9
 
       - name: 🔐 إعطاء صلاحية التشغيل لمحرك الجرادل
         run: chmod +x gradlew
 
-      - name: 🔨 بناء التطبيق (استخراج ملف APK)
-        run: ./gradlew assembleDebug --no-daemon
+      - name: 🔨 بناء التطبيق (نسخة Release غير موقعة)
+        # تم التغيير هنا لاستخراج نسخة ريليس
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: 📤 رفع ملف الـ APK النهائي للتحميل
         uses: actions/upload-artifact@v4
         with:
-          name: MindClash-App-Ready
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: MindClash-App-Unsigned
+          # تم التغيير هنا ليلتقط ملف الـ APK من مجلد الـ release
+          path: app/build/outputs/apk/release/*.apk
