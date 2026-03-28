@@ -170,7 +170,7 @@ fun GameScreen(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Text(
-                    text = "💡 تلميح: ${state.currentQuestion?.hint ?: "لا يوجد تلميح"}",
+                    text = " تلميح: ${state.currentQuestion?.hint ?: "لا يوجد تلميح"}",
                     color = LiquidGold,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -249,7 +249,7 @@ fun GameScreen(
                     }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_hint), contentDescription = "Hint", modifier = Modifier.size(70.dp).padding(5.dp))
-                    Text("💡 تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(" تلميح", color = LiquidGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
                 Column(
@@ -260,7 +260,7 @@ fun GameScreen(
                     }
                 ) {
                     Image(painter = painterResource(id = R.drawable.ic_btn_reveal), contentDescription = "Reveal", modifier = Modifier.size(70.dp).padding(5.dp))
-                    Text("🔍 كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(" كشف حرف", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -298,7 +298,7 @@ fun GameScreen(
                                     "hearts" -> viewModel.rewardLives(5)
                                 }
                             },
-                            onAdFailed = { Toast.makeText(context, "الإعلان غير جاهز حالياً", Toast.LENGTH_SHORT).show() }
+                            onAdFailed = { Toast.makeText(context, "تأكد من الإتصال...", Toast.LENGTH_SHORT).show() }
                         )
                     }, colors = ButtonDefaults.buttonColors(containerColor = mainColor.copy(alpha = 0.2f)), border = androidx.compose.foundation.BorderStroke(1.dp, mainColor), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(55.dp)) {
                         Text("مشاهدة إعلان 📺", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
@@ -321,7 +321,7 @@ fun GameScreen(
                 message = "تم تدمير أسرار المستوى ${state.currentLevel}!", 
                 score = state.score, 
                 isWin = true, 
-                buttonText = "اقتحم المستوى التالي ➡", 
+                buttonText = "التالي", 
                 buttonColor = NeonCyan, 
                 onClick = { 
                     AudioPlayer.playClick()
@@ -340,7 +340,7 @@ fun GameScreen(
                 message = "تم تدمير كل دفاعاتك في المستوى ${state.currentLevel}", 
                 score = state.score, 
                 isWin = false, 
-                buttonText = "انتقام (إعادة) 🔄", 
+                buttonText = "إعـادة", 
                 buttonColor = CrimsonRed, 
                 onClick = { 
                     AudioPlayer.playClick()
