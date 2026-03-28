@@ -34,8 +34,8 @@ class AdManager @Inject constructor(
 
     companion object {
         // 🧪 معرفات ياندكس التجريبية (Test IDs)
-        const val REWARDED_ID = "demo-rewarded-yandex"
-        const val INTERSTITIAL_ID = "demo-interstitial-yandex"
+        const val REWARDED_ID = "R-M-19018995-1"
+        const val INTERSTITIAL_ID = "R-M-19018995-2"
     }
 
     init {
