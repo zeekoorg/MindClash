@@ -1,6 +1,7 @@
 package com.zeeko.mindclash.ui.screens
 
 import android.content.Context
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,7 +34,15 @@ import com.zeeko.mindclash.AudioPlayer
 import com.zeeko.mindclash.R
 import com.zeeko.mindclash.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.random.Random
+
+// ✨ كلاس بسيط لإدارة حالة العقدة (مكانها وهل هي محطمة أم لا)
+data class NodeState(
+    val id: Int,
+    val offset: Offset,
+    var isBroken: Boolean = false
+)
 
 @Composable
 fun IntroNeuralOverloadScreen(
@@ -41,15 +50,18 @@ fun IntroNeuralOverloadScreen(
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE) }
+    val scope = rememberCoroutineScope()
     
     // --- مراحل المشهد السينمائي ---
-    // 0: الصمت المريب، 1: الإنذار والخطر، 2: الأكشن واللعب، 3: النجاح والانفجار الأبيض
     var currentPhase by remember { mutableIntStateOf(0) }
     
-    // --- متغيرات اللعب (الأكشن) ---
+    // --- متغيرات اللعب (الأكشن) - معدلة لتستمر دقيقة تقريباً ---
     var stabilityLevel by remember { mutableFloatStateOf(0f) }
     val maxStability = 1f
-    var activeNodes by remember { mutableStateOf(listOf<Offset>()) }
+    
+    // ✨ قائمة العقد الآن تحمل "حالة العقدة" (NodeState) لتغيير شكلها
+    var activeNodesStates by remember { mutableStateOf(listOf<NodeState>()) }
+    
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
@@ -57,8 +69,8 @@ fun IntroNeuralOverloadScreen(
     // --- مؤثرات الاهتزاز (Screen Shake) ---
     val infiniteTransition = rememberInfiniteTransition(label = "shake")
     val shakeOffset by infiniteTransition.animateFloat(
-        initialValue = -15f, targetValue = 15f,
-        animationSpec = infiniteRepeatable(tween(50, easing = LinearEasing), RepeatMode.Reverse), label = "shake_anim"
+        initialValue = -18f, targetValue = 18f,
+        animationSpec = infiniteRepeatable(tween(45, easing = LinearEasing), RepeatMode.Reverse), label = "shake_anim"
     )
 
     // خطوة أمان احترافية: إيقاف الصوت لو خرج اللاعب فجأة من التطبيق
@@ -76,44 +88,60 @@ fun IntroNeuralOverloadScreen(
         
         // المرحلة 1: إنذار!
         currentPhase = 1
-        AudioPlayer.stopHeartbeat() // نوقف النبض البطيء
-        AudioPlayer.playAlarm()     // نطلق الإنذار المرعب!
+        AudioPlayer.stopHeartbeat()
+        AudioPlayer.playAlarm()
         delay(2500)
         
-        // المرحلة 2: بدء الأكشن (توليد عقد الطاقة العشوائية)
+        // المرحلة 2: بدء الأكشن
         currentPhase = 2
-        // توليد أول 3 عقد ليضربها اللاعب
-        activeNodes = List(3) {
-            Offset(
-                x = Random.nextInt(50, screenWidth - 50).toFloat(),
-                y = Random.nextInt(150, screenHeight - 150).toFloat()
+        // توليد 6 عقد سليمة لزيادة التشتيت
+        activeNodesStates = List(6) { index ->
+            NodeState(
+                id = index,
+                offset = Offset(
+                    x = Random.nextInt(50, screenWidth - 80).toFloat(),
+                    y = Random.nextInt(180, screenHeight - 180).toFloat()
+                )
             )
+        }
+    }
+
+    // --- نظام "التفريغ التلقائي" السريع (Energy Decay) - سر الأدرينالين ✨ ---
+    if (currentPhase == 2) {
+        LaunchedEffect(Unit) {
+            while (stabilityLevel < maxStability && currentPhase == 2) {
+                delay(500) // كل نصف ثانية!
+                if (stabilityLevel > 0f) {
+                    // تفريغ مستمر وقاسٍ يجبره على الاستمرار في النقر كالمجنون
+                    stabilityLevel -= 0.015f 
+                    if (stabilityLevel < 0f) stabilityLevel = 0f
+                }
+            }
         }
     }
 
     // --- واجهة المستخدم (UI) ---
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         
-        // 1. صورة الخلفية (تظهر فقط بعد المرحلة 0 وتهتز في مرحلة الخطر)
+        // 1. صورة الخلفية (تظهر فقط بعد المرحلة 0 وتهتز)
         if (currentPhase > 0) {
             Image(
-                painter = painterResource(id = R.drawable.bg_home), // استخدم صورة الخلفية الفخمة التي لديك
+                painter = painterResource(id = R.drawable.bg_home), 
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        // اهتزاز الشاشة إذا كنا في مرحلة الخطر (1 أو 2)
                         translationX = if (currentPhase in 1..2) shakeOffset else 0f
                         translationY = if (currentPhase in 1..2) shakeOffset else 0f
                     }
-                    .alpha(if (currentPhase == 3) 1f else 0.5f)
+                    .alpha(if (currentPhase == 3) 1f else 0.4f)
             )
         }
 
         // 2. المحتوى حسب المرحلة
         when (currentPhase) {
-            0 -> { // الصمت
+            0 -> {
                 Text(
                     text = "جاري تهيئة العصب الذهني...",
                     color = Color.DarkGray,
@@ -121,111 +149,155 @@ fun IntroNeuralOverloadScreen(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            1 -> { // الإنذار
+            1 -> {
                 val alphaPulse by infiniteTransition.animateFloat(
                     initialValue = 0.2f, targetValue = 1f,
-                    animationSpec = infiniteRepeatable(tween(200), RepeatMode.Reverse), label = ""
+                    animationSpec = infiniteRepeatable(tween(150), RepeatMode.Reverse), label = ""
                 )
                 Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "⚠️ تـحـذيـر ⚠️",
                         color = CrimsonRed,
-                        fontSize = 45.sp,
+                        fontSize = 50.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.alpha(alphaPulse),
-                        style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 30f))
+                        style = TextStyle(shadow = Shadow(color = CrimsonRed, blurRadius = 35f))
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(15.dp))
                     Text(
-                        text = "حمل زائد على النواة!\nالنظام ينهار!",
+                        text = "حمل زائد على النواة!\nالنظام ينهار في غضون ثوانٍ!",
                         color = Color.White,
-                        fontSize = 24.sp,
+                        fontSize = 26.sp,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
-            2 -> { // الأكشن والضغط
-                // شريط الاستقرار (النجاة)
-                Column(modifier = Modifier.align(Alignment.TopCenter).padding(top = 50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            2 -> {
+                // شريط النجاة في الأعلى
+                Column(modifier = Modifier.align(Alignment.TopCenter).padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "اضغط على عقد الطاقة لتثبيت النواة!",
+                        text = "اضغط بسرعة لتثبيت النواة قبل فوات الأوان!",
                         color = NeonCyan,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        style = TextStyle(shadow = Shadow(color = NeonCyan, blurRadius = 15f))
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                        textAlign = TextAlign.Center,
+                        style = TextStyle(shadow = Shadow(color = NeonCyan, blurRadius = 20f))
                     )
-                    Spacer(modifier = Modifier.height(15.dp))
-                    // شريط التقدم
-                    Box(modifier = Modifier.width(250.dp).height(20.dp).clip(CircleShape).background(Color.DarkGray).border(2.dp, NeonCyan, CircleShape)) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Box(modifier = Modifier.width(280.dp).height(22.dp).clip(CircleShape).background(Color.DarkGray).border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)) {
                         Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(stabilityLevel / maxStability).background(LiquidGold))
                     }
                 }
 
-                // رسم العقد التفاعلية (Nodes)
-                activeNodes.forEachIndexed { index, offset ->
-                    val nodePulse by infiniteTransition.animateFloat(
-                        initialValue = 0.8f, targetValue = 1.2f,
-                        animationSpec = infiniteRepeatable(tween(300), RepeatMode.Reverse), label = ""
+                // --- عقد الطاقة (تحديث: الآن تتغير من سليمة لمحطمة عند النقر) ✨ ---
+                activeNodesStates.forEach { nodeState ->
+                    // نحافظ على أنيمايشن النبض السريع
+                    val nodePulseTransition = rememberInfiniteTransition(label = "pulse")
+                    val nodePulseScale by nodePulseTransition.animateFloat(
+                        initialValue = 0.85f, targetValue = 1.15f,
+                        animationSpec = infiniteRepeatable(tween(Random.nextInt(150, 250), easing = FastOutSlowInEasing), RepeatMode.Reverse), label = ""
                     )
+                    
+                    // استخدام Crossfade لعمل انتقال ناعم عند كسرها
                     Box(
                         modifier = Modifier
-                            .offset(x = offset.x.dp, y = offset.y.dp)
-                            .size(60.dp)
-                            .scale(nodePulse)
-                            .clip(CircleShape)
-                            .background(NeonCyan.copy(alpha = 0.8f))
-                            .border(3.dp, Color.White, CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
+                            .offset(x = nodeState.offset.x.dp, y = nodeState.offset.y.dp)
+                            .size(80.dp)
+                            .graphicsLayer {
+                                // النيون يتغير للون الخطر عند الكسر
+                                shadowElevation = if (nodeState.isBroken) 40f else 20f
+                                spotColor = if (nodeState.isBroken) CrimsonRed else NeonCyan
+                                ambientColor = if (nodeState.isBroken) CrimsonRed else NeonCyan
+                            }
+                    ) {
+                        Crossfade(
+                            targetState = nodeState.isBroken, 
+                            animationSpec = tween(if (nodeState.isBroken) 50 else 0), // كسر سريع جداً
+                            label = "break"
+                        ) { isBroken ->
+                            Image(
+                                painter = painterResource(
+                                    id = if (isBroken) R.drawable.ic_neural_node_broken else R.drawable.ic_neural_node_healthy
+                                ),
+                                contentDescription = "Neural Node",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .scale(nodePulseScale)
+                                    // منطق النقر (Click Logic) ✨
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
                             ) {
-                                AudioPlayer.playClick() // صوت ضرب العقدة
-                                // زيادة الاستقرار
-                                stabilityLevel += 0.15f
-                                
-                                // إذا اكتمل الاستقرار، ننتقل لمرحلة النجاح
-                                if (stabilityLevel >= maxStability) {
-                                    currentPhase = 3
-                                } else {
-                                    // إخفاء هذه العقدة وتوليد واحدة جديدة في مكان عشوائي
-                                    val newNodes = activeNodes.toMutableList()
-                                    newNodes[index] = Offset(
-                                        x = Random.nextInt(50, screenWidth - 80).toFloat(),
-                                        y = Random.nextInt(150, screenHeight - 150).toFloat()
-                                    )
-                                    activeNodes = newNodes
+                                // 1. التحقق أن العقدة ليست مكسورة مسبقاً لمنع النقر المتعدد
+                                if (!nodeState.isBroken && currentPhase == 2) {
+                                    
+                                    AudioPlayer.playClick() 
+                                    
+                                    // 2. تحديث حالة هذه العقدة لتصبح مكسورة فوراً
+                                    val updatedList = activeNodesStates.map {
+                                        if (it.id == nodeState.id) it.copy(isBroken = true) else it
+                                    }
+                                    activeNodesStates = updatedList
+                                    
+                                    // 3. زيادة شريط الثبات بنسبة قليلة جداً (يطيل مدة اللعبة)
+                                    stabilityLevel += 0.015f
+                                    
+                                    // 4. منطق ما بعد الكسر
+                                    if (stabilityLevel >= maxStability) {
+                                        currentPhase = 3
+                                    } else {
+                                        // تأخير جزء من الثانية لتثبيت الصورة المحطمة بصرياً قبل إخفائها
+                                        scope.launch {
+                                            delay(200) // 0.2 ثانية ليراها اللاعب محطمة
+                                            
+                                            // إيجاد مكان جديد ونقل العقدة مع إعادة ضبطها لـ isBroken = false
+                                            val newList = activeNodesStates.map {
+                                                if (it.id == nodeState.id) {
+                                                    it.copy(
+                                                        isBroken = false,
+                                                        offset = Offset(
+                                                            x = Random.nextInt(40, screenWidth - 90).toFloat(),
+                                                            y = Random.nextInt(180, screenHeight - 180).toFloat()
+                                                        )
+                                                    )
+                                                } else it
+                                            }
+                                            activeNodesStates = newList
+                                        }
+                                    }
                                 }
                             }
-                    )
+                            )
+                        }
+                    }
                 }
             }
             3 -> { // النجاح والوميض الأبيض
                 val whiteFlash = remember { Animatable(0f) }
                 LaunchedEffect(Unit) {
-                    AudioPlayer.playPowerUp() // صوت تفريغ الطاقة والنجاح الفخم!
-                    whiteFlash.animateTo(1f, tween(300)) // وميض سريع
+                    AudioPlayer.playPowerUp() 
+                    whiteFlash.animateTo(1f, tween(300)) 
                     delay(500)
-                    whiteFlash.animateTo(0f, tween(1500)) // يتلاشى ببطء
-                    delay(500)
+                    whiteFlash.animateTo(0f, tween(1500)) 
+                    delay(1500) // وقت لقراءة النص الجديد قبل الانتقال
                     
-                    // حفظ أن اللاعب تجاوز الافتتاحية
                     sharedPreferences.edit().putBoolean("IntroOverloadComplete", true).apply()
                     onComplete()
                 }
 
-                // رسالة النجاح
+                // ✨ النص الجديد الذي طلبته
                 Text(
-                    text = "تم استقرار النواة\nMINDCLASH -> CONNECTED",
+                    text = "جيد يمكنك متابعة اللعب...",
                     color = NeonCyan,
-                    fontSize = 28.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center),
-                    style = TextStyle(shadow = Shadow(color = NeonCyan, blurRadius = 20f))
+                    style = TextStyle(shadow = Shadow(color = NeonCyan, blurRadius = 25f))
                 )
 
-                // صندوق الوميض الأبيض
                 Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = whiteFlash.value)))
             }
         }
