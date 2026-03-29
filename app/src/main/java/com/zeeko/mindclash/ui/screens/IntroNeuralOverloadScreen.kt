@@ -1,6 +1,7 @@
 package com.zeeko.mindclash.ui.screens
 
 import android.app.Activity
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
@@ -39,20 +40,18 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
-fun IntroOrbitalBreachScreen(
+fun IntroNeuralOverloadScreen(
     onComplete: () -> Unit
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("MindClashPrefs", Context.MODE_PRIVATE) }
     val scope = rememberCoroutineScope()
 
-    // --- نظام حماية زر الرجوع (Double Tap to Exit) ---
+    // --- نظام حماية زر الرجوع (نقر مزدوج) ---
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
-    
     BackHandler {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastBackPressTime < 2000) {
-            // إذا ضغط مرتين في أقل من ثانيتين، يخرج من التطبيق
             (context as? Activity)?.finish()
         } else {
             lastBackPressTime = currentTime
@@ -67,7 +66,6 @@ fun IntroOrbitalBreachScreen(
     var isFiring by remember { mutableStateOf(false) }
     var laserTargetRing by remember { mutableIntStateOf(-1) } 
     
-    // زوايا الحلقات
     var angle1 by remember { mutableFloatStateOf(0f) }
     var angle2 by remember { mutableFloatStateOf(0f) }
     var angle3 by remember { mutableFloatStateOf(0f) }
@@ -80,7 +78,7 @@ fun IntroOrbitalBreachScreen(
     val shakeAnim = remember { Animatable(0f) }
     val flashAlpha = remember { Animatable(0f) }
 
-    // محرك الدوران الموزون لضمان وجود فجوات زمنية للاختراق
+    // محرك الدوران الموزون
     LaunchedEffect(currentPhase, hits) {
         if (currentPhase == 2) {
             while (true) {
@@ -104,13 +102,12 @@ fun IntroOrbitalBreachScreen(
         currentPhase = 2
     }
 
-    // دالة قنص النواة
     fun checkBreach() {
         if (isFiring || currentPhase != 2) return
         isFiring = true
         AudioPlayer.playClick()
 
-        val target = 90f // نقطة الإطلاق (الأسفل)
+        val target = 90f 
         val gap = 45f    
 
         fun isBlocked(angle: Float): Boolean {
@@ -150,7 +147,6 @@ fun IntroOrbitalBreachScreen(
             .graphicsLayer { translationX = shakeAnim.value }
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { checkBreach() }
     ) {
-        // الخلفية
         if (currentPhase > 0) {
             Image(
                 painter = painterResource(id = R.drawable.bg_home),
@@ -171,7 +167,6 @@ fun IntroOrbitalBreachScreen(
             )
             
             2 -> {
-                // التقدم
                 Column(modifier = Modifier.align(Alignment.TopCenter).padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("اكتمال الاختراق: ${hits}/$maxHits", color = LiquidGold, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                     Spacer(modifier = Modifier.height(12.dp))
@@ -187,10 +182,8 @@ fun IntroOrbitalBreachScreen(
                     val gapAngle = 45f
                     val sweep = 360f - gapAngle
 
-                    // دليل التصويب
                     drawLine(Color.White.copy(alpha = 0.08f), Offset(center.x, center.y), Offset(center.x, size.height), 2f)
 
-                    // رسم الليزر
                     if (isFiring) {
                         val endY = when(laserTargetRing) {
                             1 -> center.y + 280f.dp.toPx()
@@ -223,13 +216,10 @@ fun IntroOrbitalBreachScreen(
                     drawRing(210f.dp.toPx(), angle2, Color(0xFF666666))
                     drawRing(140f.dp.toPx(), angle3, Color.LightGray)
                     
-                    // المدفع السفلي
                     drawCircle(LiquidGold, 22.dp.toPx(), Offset(size.width / 2, size.height - 120.dp.toPx()))
                 }
 
-                // --- النواة (أيقونتك ic_core_nexus) ---
                 Box(modifier = Modifier.size(100.dp).align(Alignment.Center).scale(corePulse)) {
-                    // توهج خلف الأيقونة
                     Box(modifier = Modifier.fillMaxSize().background(NeonCyan.copy(alpha = 0.15f), CircleShape))
                     Image(
                         painter = painterResource(id = R.drawable.ic_core_nexus),
@@ -244,7 +234,7 @@ fun IntroOrbitalBreachScreen(
                     AudioPlayer.playPowerUp()
                     flashAlpha.animateTo(1f, tween(600))
                     delay(1800)
-                    sharedPreferences.edit().putBoolean("IntroOrbitalBreachComplete", true).apply()
+                    sharedPreferences.edit().putBoolean("IntroComplete", true).apply()
                     onComplete()
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = flashAlpha.value))) {
@@ -260,4 +250,3 @@ fun IntroOrbitalBreachScreen(
         }
     }
 }
-
