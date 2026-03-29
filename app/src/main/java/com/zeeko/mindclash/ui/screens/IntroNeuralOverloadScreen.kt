@@ -55,11 +55,11 @@ fun IntroNeuralOverloadScreen(
     // --- مراحل المشهد السينمائي ---
     var currentPhase by remember { mutableIntStateOf(0) }
     
-    // --- متغيرات اللعب (الأكشن) - معدلة لتستمر دقيقة تقريباً ---
+    // --- متغيرات اللعب (الأكشن) - معدلة لتستمر طويلاً ---
     var stabilityLevel by remember { mutableFloatStateOf(0f) }
     val maxStability = 1f
     
-    // ✨ قائمة العقد الآن تحمل "حالة العقدة" (NodeState) لتغيير شكلها
+    // قائمة العقد الآن تحمل "حالة العقدة" (NodeState) لتغيير شكلها
     var activeNodesStates by remember { mutableStateOf(listOf<NodeState>()) }
     
     val configuration = LocalConfiguration.current
@@ -106,13 +106,13 @@ fun IntroNeuralOverloadScreen(
         }
     }
 
-    // --- نظام "التفريغ التلقائي" السريع (Energy Decay) - سر الأدرينالين ✨ ---
+    // --- نظام "التفريغ التلقائي" السريع (Energy Decay) ---
     if (currentPhase == 2) {
         LaunchedEffect(Unit) {
             while (stabilityLevel < maxStability && currentPhase == 2) {
                 delay(500) // كل نصف ثانية!
                 if (stabilityLevel > 0f) {
-                    // تفريغ مستمر وقاسٍ يجبره على الاستمرار في النقر كالمجنون
+                    // تفريغ مستمر وقاسٍ يجبره على الاستمرار في النقر
                     stabilityLevel -= 0.015f 
                     if (stabilityLevel < 0f) stabilityLevel = 0f
                 }
@@ -190,30 +190,26 @@ fun IntroNeuralOverloadScreen(
                     }
                 }
 
-                // --- عقد الطاقة (تحديث: الآن تتغير من سليمة لمحطمة عند النقر) ✨ ---
+                // --- عقد الطاقة (تتغير من سليمة لمحطمة عند النقر) ---
                 activeNodesStates.forEach { nodeState ->
-                    // نحافظ على أنيمايشن النبض السريع
                     val nodePulseTransition = rememberInfiniteTransition(label = "pulse")
                     val nodePulseScale by nodePulseTransition.animateFloat(
                         initialValue = 0.85f, targetValue = 1.15f,
                         animationSpec = infiniteRepeatable(tween(Random.nextInt(150, 250), easing = FastOutSlowInEasing), RepeatMode.Reverse), label = ""
                     )
                     
-                    // استخدام Crossfade لعمل انتقال ناعم عند كسرها
+                    // تم إزالة الألوان المسببة للخطأ والاكتفاء بالظل لضمان نجاح البناء
                     Box(
                         modifier = Modifier
                             .offset(x = nodeState.offset.x.dp, y = nodeState.offset.y.dp)
                             .size(80.dp)
                             .graphicsLayer {
-                                // النيون يتغير للون الخطر عند الكسر
-                                shadowElevation = if (nodeState.isBroken) 40f else 20f
-                                spotColor = if (nodeState.isBroken) CrimsonRed else NeonCyan
-                                ambientColor = if (nodeState.isBroken) CrimsonRed else NeonCyan
+                                shadowElevation = if (nodeState.isBroken) 30f else 15f
                             }
                     ) {
                         Crossfade(
                             targetState = nodeState.isBroken, 
-                            animationSpec = tween(if (nodeState.isBroken) 50 else 0), // كسر سريع جداً
+                            animationSpec = tween(if (nodeState.isBroken) 50 else 0), 
                             label = "break"
                         ) { isBroken ->
                             Image(
@@ -225,34 +221,31 @@ fun IntroNeuralOverloadScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .scale(nodePulseScale)
-                                    // منطق النقر (Click Logic) ✨
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null
                             ) {
-                                // 1. التحقق أن العقدة ليست مكسورة مسبقاً لمنع النقر المتعدد
+                                // التحقق أن العقدة ليست مكسورة مسبقاً لمنع النقر المتعدد
                                 if (!nodeState.isBroken && currentPhase == 2) {
                                     
                                     AudioPlayer.playClick() 
                                     
-                                    // 2. تحديث حالة هذه العقدة لتصبح مكسورة فوراً
+                                    // تحديث حالة العقدة لتصبح مكسورة فوراً
                                     val updatedList = activeNodesStates.map {
                                         if (it.id == nodeState.id) it.copy(isBroken = true) else it
                                     }
                                     activeNodesStates = updatedList
                                     
-                                    // 3. زيادة شريط الثبات بنسبة قليلة جداً (يطيل مدة اللعبة)
+                                    // زيادة شريط الثبات بنسبة بطيئة
                                     stabilityLevel += 0.015f
                                     
-                                    // 4. منطق ما بعد الكسر
                                     if (stabilityLevel >= maxStability) {
                                         currentPhase = 3
                                     } else {
-                                        // تأخير جزء من الثانية لتثبيت الصورة المحطمة بصرياً قبل إخفائها
+                                        // تأخير ليراها اللاعب محطمة قبل إخفائها ونقلها
                                         scope.launch {
-                                            delay(200) // 0.2 ثانية ليراها اللاعب محطمة
+                                            delay(200) 
                                             
-                                            // إيجاد مكان جديد ونقل العقدة مع إعادة ضبطها لـ isBroken = false
                                             val newList = activeNodesStates.map {
                                                 if (it.id == nodeState.id) {
                                                     it.copy(
@@ -281,13 +274,13 @@ fun IntroNeuralOverloadScreen(
                     whiteFlash.animateTo(1f, tween(300)) 
                     delay(500)
                     whiteFlash.animateTo(0f, tween(1500)) 
-                    delay(1500) // وقت لقراءة النص الجديد قبل الانتقال
+                    delay(1500) 
                     
                     sharedPreferences.edit().putBoolean("IntroOverloadComplete", true).apply()
                     onComplete()
                 }
 
-                // ✨ النص الجديد الذي طلبته
+                // النص النهائي المطلوب
                 Text(
                     text = "جيد يمكنك متابعة اللعب...",
                     color = NeonCyan,
